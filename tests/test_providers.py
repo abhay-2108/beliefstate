@@ -1,7 +1,7 @@
 import pytest
 from typing import Any
 from unittest.mock import MagicMock, patch, AsyncMock
-from beliefstate import BeliefTracker, TrackerConfig
+from beliefstate import BeliefTracker, TrackerConfig, Belief
 from beliefstate.adapters.base import ProviderAdapter
 from beliefstate.adapters.openai import OpenAIAdapter
 from beliefstate.adapters.anthropic import AnthropicAdapter
@@ -97,3 +97,41 @@ async def test_litellm_adapter():
             model="text-embedding-3",
             input=["hello", "world"]
         )
+
+
+@pytest.mark.asyncio
+async def test_tracker_context_injection():
+    config = TrackerConfig(enable_background_tasks=False)
+    mock_adapter = MagicMock()
+    tracker = BeliefTracker(config=config, adapter=mock_adapter)
+    
+    # Pre-populate some beliefs in SQLite memory DB
+    b1 = Belief(subject="USER", predicate="likes", value="python", confidence=1.0, turn=1, source="user")
+    b2 = Belief(subject="USER", predicate="lives in", value="Paris", confidence=1.0, turn=2, source="user")
+    await tracker.store.add_belief("session_999", b1)
+    await tracker.store.add_belief("session_999", b2)
+    
+    # 1. Test get_context_prompt
+    context = await tracker.get_context_prompt("session_999")
+    assert "Known user facts & preferences:" in context
+    assert "- USER likes python" in context
+    assert "- USER lives in Paris" in context
+    
+    # 2. Test inject_context prepending new system message
+    messages = [{"role": "user", "content": "Hello!"}]
+    injected_new = await tracker.inject_context(messages, "session_999")
+    assert len(injected_new) == 2
+    assert injected_new[0]["role"] == "system"
+    assert "Known user facts & preferences:" in injected_new[0]["content"]
+    assert injected_new[1]["content"] == "Hello!"
+    
+    # 3. Test inject_context appending to existing system message
+    messages_with_sys = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "Hello!"}
+    ]
+    injected_exist = await tracker.inject_context(messages_with_sys, "session_999")
+    assert len(injected_exist) == 2
+    assert injected_exist[0]["role"] == "system"
+    assert "You are a helpful assistant." in injected_exist[0]["content"]
+    assert "Known user facts & preferences:" in injected_exist[0]["content"]

@@ -80,6 +80,57 @@ class BeliefTracker:
         sid = session_id or session_context.get()
         return self.resolver.pop_pending_conflicts(sid)
 
+    async def get_context_prompt(self, session_id: Optional[str] = None, format_template: Optional[str] = None) -> str:
+        """
+        Retrieve all active, non-contradictory beliefs for the session 
+        and format them into a structured text block for the system prompt.
+        """
+        sid = session_id or session_context.get()
+        beliefs = await self.store.get_beliefs(sid)
+        if not beliefs:
+            return ""
+            
+        facts_list = [f"- {b.subject} {b.predicate} {b.value}" for b in beliefs]
+        facts_str = "\n".join(facts_list)
+        
+        template = format_template or "Known user facts & preferences:\n{facts}"
+        return template.format(facts=facts_str)
+
+    async def inject_context(
+        self, 
+        messages: list[Dict[str, Any]], 
+        session_id: Optional[str] = None, 
+        format_template: Optional[str] = None
+    ) -> list[Dict[str, Any]]:
+        """
+        Inject the current session belief state context into a list of messages.
+        If a system message is already present, appends the belief context to it.
+        Otherwise, prepends a new system message containing the belief context.
+        """
+        context_prompt = await self.get_context_prompt(session_id, format_template)
+        if not context_prompt:
+            return messages
+            
+        new_messages = [m.copy() for m in messages]
+        
+        # Look for existing system message
+        system_idx = -1
+        for idx, m in enumerate(new_messages):
+            if isinstance(m, dict) and m.get("role") == "system":
+                system_idx = idx
+                break
+                
+        if system_idx != -1:
+            orig_content = new_messages[system_idx].get("content", "")
+            if orig_content:
+                new_messages[system_idx]["content"] = f"{orig_content}\n\n{context_prompt}"
+            else:
+                new_messages[system_idx]["content"] = context_prompt
+        else:
+            new_messages.insert(0, {"role": "system", "content": context_prompt})
+            
+        return new_messages
+
     async def _track_background(self, call: LLMCall, response: LLMResponse, session_id: str, turn: int):
         """The background pipeline for extracting, detecting, and resolving beliefs."""
         try:
