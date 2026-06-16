@@ -7,6 +7,7 @@ from beliefstate import BeliefTracker, TrackerConfig, OpenAIAdapter
 # Load env variables from .env
 load_dotenv()
 
+
 async def main():
     api_key = os.getenv("NVIDIA_API_KEY")
     model_name = os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct")
@@ -27,13 +28,13 @@ async def main():
         client=client,
         model=model_name,
         embed_model="nvidia/llama-nemotron-embed-1b-v2",
-        embed_kwargs={"extra_body": {"input_type": "passage"}}
+        embed_kwargs={"extra_body": {"input_type": "passage"}},
     )
 
     config = TrackerConfig(
         store_type="sqlite",
         store_kwargs={"db_path": ":memory:"},
-        enable_background_tasks=False  # Run synchronously to wait for results in the script
+        enable_background_tasks=False,  # Run synchronously to wait for results in the script
     )
 
     tracker = BeliefTracker(config=config, adapter=adapter)
@@ -43,15 +44,14 @@ async def main():
     async def chat_with_assistant(messages):
         print("\nSending request to NVIDIA NIM...")
         response = await client.chat.completions.create(
-            model=model_name,
-            messages=messages
+            model=model_name, messages=messages
         )
         return response
 
     # 1. User introduces themselves
     user_prompt = "Hello! My name is Abhay, and I prefer dark mode interface."
     messages = [{"role": "user", "content": user_prompt}]
-    
+
     response = await chat_with_assistant(messages)
     assistant_reply = response.choices[0].message.content
     print(f"NVIDIA NIM Response: {assistant_reply}")
@@ -60,9 +60,12 @@ async def main():
     beliefs = await tracker.store.get_beliefs("nvidia-test-session")
     print("\n--- Extracted Beliefs in SQLite ---")
     if not beliefs:
-        print("No beliefs extracted. Check if the prompt generated output that allows extraction.")
+        print(
+            "No beliefs extracted. Check if the prompt generated output that allows extraction."
+        )
     for b in beliefs:
         print(f"Fact: [{b.subject}] {b.predicate} '{b.value}'")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

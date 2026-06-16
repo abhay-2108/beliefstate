@@ -13,12 +13,13 @@ except ImportError:
     LLMResult = Any
     BaseMessage = Any
 
+
 class BeliefTrackerLangchainCallback(AsyncCallbackHandler):
     """
     LangChain callback handler to automatically track beliefs from chat generation.
     It hooks into LangChain's event system so you don't need to manually wrap functions.
     """
-    
+
     def __init__(self, tracker: BeliefTracker):
         self.tracker = tracker
         self.pending_calls: Dict[str, LLMCall] = {}
@@ -32,24 +33,26 @@ class BeliefTrackerLangchainCallback(AsyncCallbackHandler):
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         universal_msgs = []
         if prompts and len(prompts) > 0:
             for p in prompts:
                 universal_msgs.append({"role": "user", "content": p})
-        self.pending_calls[str(run_id)] = LLMCall(messages=universal_msgs, kwargs=kwargs)
+        self.pending_calls[str(run_id)] = LLMCall(
+            messages=universal_msgs, kwargs=kwargs
+        )
 
     async def on_chat_model_start(
-        self, 
-        serialized: Dict[str, Any], 
-        messages: List[List[BaseMessage]], 
-        *, 
-        run_id: UUID, 
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[BaseMessage]],
+        *,
+        run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         # Translate LangChain messages into our universal format
         universal_msgs = []
@@ -61,31 +64,32 @@ class BeliefTrackerLangchainCallback(AsyncCallbackHandler):
                     role = "system"
                 elif m_type == "ai":
                     role = "assistant"
-                    
-                universal_msgs.append({
-                    "role": role, 
-                    "content": getattr(m, "content", "")
-                })
-                
-        self.pending_calls[str(run_id)] = LLMCall(messages=universal_msgs, kwargs=kwargs)
+
+                universal_msgs.append(
+                    {"role": role, "content": getattr(m, "content", "")}
+                )
+
+        self.pending_calls[str(run_id)] = LLMCall(
+            messages=universal_msgs, kwargs=kwargs
+        )
 
     async def on_llm_end(
-        self, 
-        response: LLMResult, 
-        *, 
-        run_id: UUID, 
+        self,
+        response: LLMResult,
+        *,
+        run_id: UUID,
         parent_run_id: Optional[UUID] = None,
         tags: Optional[List[str]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         call = self.pending_calls.pop(str(run_id), None)
         if not call:
             return
-            
+
         # Parse LangChain generation output
         if not response.generations or not response.generations[0]:
             return
-            
+
         text = response.generations[0][0].text
         # Safely dump response to dict if it's a pydantic model (supporting both v1 and v2)
         if hasattr(response, "model_dump"):
@@ -94,19 +98,23 @@ class BeliefTrackerLangchainCallback(AsyncCallbackHandler):
             raw = response.dict()
         else:
             raw = response
-            
+
         llm_response = LLMResponse(text=text, raw_response=raw)
-        
+
         session_id = session_context.get()
         self.tracker.turn_counter += 1
         current_turn = self.tracker.turn_counter
-        
+
         if self.tracker.config.enable_background_tasks:
             asyncio.create_task(
-                self.tracker._track_background(call, llm_response, session_id, current_turn)
+                self.tracker._track_background(
+                    call, llm_response, session_id, current_turn
+                )
             )
         else:
-            await self.tracker._track_background(call, llm_response, session_id, current_turn)
+            await self.tracker._track_background(
+                call, llm_response, session_id, current_turn
+            )
 
     async def on_llm_error(
         self,
@@ -114,7 +122,7 @@ class BeliefTrackerLangchainCallback(AsyncCallbackHandler):
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> Any:
         # Prevent memory leaks by cleaning up pending calls on error
         self.pending_calls.pop(str(run_id), None)

@@ -3,12 +3,14 @@ from fastapi import Header, Request
 from beliefstate.tracker import session_context
 from beliefstate.integrations.asgi import BeliefTrackerASGIMiddleware
 
+
 class FastAPIBeliefTrackerMiddleware(BeliefTrackerASGIMiddleware):
     """
-    FastAPI-branded ASGI middleware to automatically extract a session ID 
-    from request headers, set it in the tracker's context, and expose it 
+    FastAPI-branded ASGI middleware to automatically extract a session ID
+    from request headers, set it in the tracker's context, and expose it
     via request.state.session_id.
     """
+
     async def __call__(self, scope: dict, receive: Any, send: Any) -> None:
         if scope["type"] not in ("http", "websocket"):
             await self.app(scope, receive, send)
@@ -35,14 +37,13 @@ class FastAPIBeliefTrackerMiddleware(BeliefTrackerASGIMiddleware):
 
 
 async def get_session_id(
-    request: Request,
-    x_session_id: Optional[str] = Header(None, alias="X-Session-ID")
+    request: Request, x_session_id: Optional[str] = Header(None, alias="X-Session-ID")
 ) -> AsyncGenerator[Optional[str], None]:
     """
-    FastAPI dependency injection helper to extract the session ID from the 
-    X-Session-ID header (or fallback to request.state) and bind it to the 
+    FastAPI dependency injection helper to extract the session ID from the
+    X-Session-ID header (or fallback to request.state) and bind it to the
     tracker context.
-    
+
     Usage:
         @app.post("/chat")
         async def chat(message: str, session_id: str = Depends(get_session_id)):

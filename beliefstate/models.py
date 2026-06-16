@@ -1,8 +1,10 @@
 from typing import List
 from pydantic import BaseModel, Field
 
+
 class Belief(BaseModel):
     """Represents a single extracted factual belief."""
+
     subject: str
     predicate: str
     value: str

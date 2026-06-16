@@ -1,10 +1,12 @@
 from beliefstate.tracker import session_context
 
+
 class BeliefTrackerASGIMiddleware:
     """
-    ASGI Middleware (works with FastAPI, Starlette, Litestar, Quart, etc.) 
+    ASGI Middleware (works with FastAPI, Starlette, Litestar, Quart, etc.)
     to automatically extract a session ID from a request header and set it in the tracker's context.
     """
+
     def __init__(self, app, header_name: str = "x-session-id"):
         self.app = app
         self.header_name = header_name.lower().encode("latin1")
@@ -19,7 +21,7 @@ class BeliefTrackerASGIMiddleware:
             if name == self.header_name:
                 session_id = value.decode("latin1")
                 break
-                
+
         if session_id:
             # Set the context variable for this specific request
             token = session_context.set(session_id)

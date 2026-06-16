@@ -7,16 +7,24 @@ mock_llama_index = MagicMock()
 mock_llama_index.core = MagicMock()
 mock_llama_index.core.callbacks = MagicMock()
 
+
 class MockCBEventType:
     LLM = "llm"
     EMBEDDING = "embedding"
 
+
 mock_llama_index.core.callbacks.CBEventType = MockCBEventType
 
+
 class MockBaseCallbackHandler:
-    def __init__(self, event_starts_to_ignore: Optional[List[Any]] = None, event_ends_to_ignore: Optional[List[Any]] = None) -> None:
+    def __init__(
+        self,
+        event_starts_to_ignore: Optional[List[Any]] = None,
+        event_ends_to_ignore: Optional[List[Any]] = None,
+    ) -> None:
         self.event_starts_to_ignore = event_starts_to_ignore or []
         self.event_ends_to_ignore = event_ends_to_ignore or []
+
 
 mock_llama_index.core.callbacks.BaseCallbackHandler = MockBaseCallbackHandler
 
