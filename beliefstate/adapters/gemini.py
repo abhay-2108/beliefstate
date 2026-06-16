@@ -70,7 +70,7 @@ class GeminiAdapter(ProviderAdapter):
             raw_response=response
         )
 
-    async def generate(self, call: LLMCall) -> LLMResponse:
+    async def generate(self, call: LLMCall, response_format: Optional[Any] = None) -> LLMResponse:
         if not self.client:
             raise RuntimeError("Google GenAI client not installed. Install with `pip install google-genai`.")
             
@@ -84,6 +84,10 @@ class GeminiAdapter(ProviderAdapter):
         config_args = {}
         if call.system:
             config_args["system_instruction"] = call.system
+            
+        if response_format:
+            config_args["response_mime_type"] = "application/json"
+            config_args["response_schema"] = response_format
             
         generate_config = types.GenerateContentConfig(**config_args) if config_args else None
             

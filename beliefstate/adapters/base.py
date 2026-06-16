@@ -1,4 +1,4 @@
-from typing import Any, List, Protocol, runtime_checkable
+from typing import Any, List, Protocol, runtime_checkable, Optional
 from beliefstate.call import LLMCall, LLMResponse
 
 @runtime_checkable
@@ -13,7 +13,7 @@ class ProviderAdapter(Protocol):
         """Convert a native SDK response object into a universal LLMResponse."""
         ...
         
-    async def generate(self, call: LLMCall) -> LLMResponse:
+    async def generate(self, call: LLMCall, response_format: Optional[Any] = None) -> LLMResponse:
         """Execute a generation request using this provider natively (used for internal tracker logic)."""
         ...
         

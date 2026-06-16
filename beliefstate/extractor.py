@@ -20,22 +20,40 @@ class BeliefExtractor:
         # We make an internal LLM call to extract beliefs
         call = LLMCall(messages=[{"role": "user", "content": prompt}])
         
+        from pydantic import RootModel
+        class BeliefListSchema(RootModel[List[Belief]]):
+            pass
+            
         try:
-            llm_resp = await self.adapter.generate(call)
+            llm_resp = await self.adapter.generate(call, response_format=BeliefListSchema)
             
-            # Parse JSON
-            import re
-            
+            # Parse JSON robustly
             text = llm_resp.text.strip()
-            
-            # Find the first '[' and the last ']'
-            match = re.search(r'\[.*\]', text, re.DOTALL)
-            if match:
-                text = match.group(0)
-            else:
+            data = None
+            try:
+                data = json.loads(text)
+            except Exception:
+                import re
+                match_arr = re.search(r'\[.*\]', text, re.DOTALL)
+                match_obj = re.search(r'\{.*\}', text, re.DOTALL)
+                if match_obj:
+                    try:
+                        data = json.loads(match_obj.group(0))
+                    except Exception:
+                        pass
+                if data is None and match_arr:
+                    try:
+                        data = json.loads(match_arr.group(0))
+                    except Exception:
+                        pass
+                        
+            if data is None:
                 return []
                 
-            data = json.loads(text)
+            if isinstance(data, dict):
+                data = data.get("beliefs", data.get("root", []))
+                if not isinstance(data, list):
+                    data = []
             
             beliefs = []
             temp_beliefs = []

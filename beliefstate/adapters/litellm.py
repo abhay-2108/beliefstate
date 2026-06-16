@@ -53,7 +53,7 @@ class LiteLLMAdapter(ProviderAdapter):
             raw_response=response
         )
 
-    async def generate(self, call: LLMCall) -> LLMResponse:
+    async def generate(self, call: LLMCall, response_format: Optional[Any] = None) -> LLMResponse:
         if not HAS_LITELLM:
             raise ImportError("LiteLLM is not installed.")
             
@@ -69,6 +69,9 @@ class LiteLLMAdapter(ProviderAdapter):
             has_system = any(m.get("role") == "system" for m in kwargs["messages"])
             if not has_system:
                 kwargs["messages"] = [{"role": "system", "content": call.system}] + kwargs["messages"]
+                
+        if response_format:
+            kwargs["response_format"] = response_format
                 
         response = await litellm.acompletion(**kwargs)
         return self.to_llm_response(response)

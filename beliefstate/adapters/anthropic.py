@@ -50,12 +50,29 @@ class AnthropicAdapter(ProviderAdapter):
             raw_response=response
         )
 
-    async def generate(self, call: LLMCall) -> LLMResponse:
+    async def generate(self, call: LLMCall, response_format: Optional[Any] = None) -> LLMResponse:
         if not self.client:
             raise RuntimeError("Anthropic client not installed. Install with `pip install anthropic`.")
             
+        import json
         kwargs = call.kwargs.copy()
-        kwargs["messages"] = call.messages
+        
+        # Prompt-based fallback formatting instructions if the provider does not support native schema validation
+        messages = call.messages.copy()
+        if response_format:
+            try:
+                schema_json = json.dumps(response_format.model_json_schema())
+            except Exception:
+                schema_json = "{}"
+            instruction = f"\n\nIMPORTANT: You must return a valid JSON object or JSON array conforming strictly to the following JSON Schema: {schema_json}. Do NOT include any explanations, markdown code blocks, or preamble in your response. Output only raw JSON."
+            if messages:
+                last_m = messages[-1].copy()
+                last_m["content"] = last_m.get("content", "") + instruction
+                messages[-1] = last_m
+            else:
+                messages.append({"role": "user", "content": instruction})
+                
+        kwargs["messages"] = messages
         if call.system and "system" not in kwargs:
             kwargs["system"] = call.system
         if "model" not in kwargs:

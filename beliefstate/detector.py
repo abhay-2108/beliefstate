@@ -55,16 +55,30 @@ class ContradictionDetector:
                 )
                 
                 call = LLMCall(messages=[{"role": "user", "content": prompt}])
-                try:
-                    llm_resp = await self.adapter.generate(call)
-                    raw_text = llm_resp.text.strip()
-                    if raw_text.startswith("```json"):
-                        raw_text = raw_text[7:-3].strip()
-                    elif raw_text.startswith("```"):
-                        raw_text = raw_text[3:-3].strip()
-                        
-                    data = json.loads(raw_text)
+                from pydantic import BaseModel, Field
+                class ContradictionResolution(BaseModel):
+                    relationship: str = Field(description="The relationship between premise and hypothesis: 'contradiction', 'entailment', or 'neutral'")
+                    score: float = Field(description="Confidence score between 0.0 and 1.0")
+                    reason: str = Field(description="Explanation of the relationship decision")
                     
+                try:
+                    llm_resp = await self.adapter.generate(call, response_format=ContradictionResolution)
+                    raw_text = llm_resp.text.strip()
+                    data = None
+                    try:
+                        data = json.loads(raw_text)
+                    except Exception:
+                        import re
+                        match_obj = re.search(r'\{.*\}', raw_text, re.DOTALL)
+                        if match_obj:
+                            try:
+                                data = json.loads(match_obj.group(0))
+                            except Exception:
+                                pass
+                                
+                    if data is None:
+                        continue
+                        
                     if data.get("relationship") == "contradiction":
                         score = float(data.get("score", 0.0))
                         if score >= self.config.contradiction_threshold:

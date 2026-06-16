@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import Any, List, Callable, Coroutine
+from typing import Any, List, Callable, Coroutine, Optional
 from tenacity import AsyncRetrying, wait_exponential, stop_after_attempt, retry_if_exception
 
 from beliefstate.config import TrackerConfig
@@ -140,9 +140,9 @@ class ResilientAdapterWrapper(ProviderAdapter):
     def to_llm_response(self, response: Any) -> LLMResponse:
         return self.adapter.to_llm_response(response)
 
-    async def generate(self, call: LLMCall) -> LLMResponse:
+    async def generate(self, call: LLMCall, response_format: Optional[Any] = None) -> LLMResponse:
         return await self._execute_with_resilience(
-            lambda: self.adapter.generate(call),
+            lambda: self.adapter.generate(call, response_format=response_format),
             self.llm_breaker,
             "generate"
         )
