@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Tuple, Protocol, runtime_checkable
+from typing import Tuple, Protocol, runtime_checkable, Optional, Any
 from beliefstate.models import Belief
 from beliefstate.adapters.base import ProviderAdapter
 from beliefstate.config import TrackerConfig
@@ -94,9 +94,9 @@ class LocalNLIJudge(ContradictionJudge):
     ):
         self.model_name = model_name
         self.threshold = threshold
-        self._pipeline = None
+        self._pipeline: Optional[Any] = None
 
-    def _init_pipeline(self):
+    def _init_pipeline(self) -> None:
         if self._pipeline is None:
             try:
                 from transformers import pipeline
@@ -118,10 +118,14 @@ class LocalNLIJudge(ContradictionJudge):
 
         loop = asyncio.get_running_loop()
 
+        pipeline_fn = self._pipeline
+        if pipeline_fn is None:
+            return False, 0.0, "Pipeline not initialized"
+
         try:
             # Run inference in a threadpool executor to avoid blocking the event loop
             res = await loop.run_in_executor(
-                None, lambda: self._pipeline({"text": premise, "text_pair": hypothesis})
+                None, lambda: pipeline_fn({"text": premise, "text_pair": hypothesis})
             )
 
             if not res or not isinstance(res, list) or len(res) == 0:

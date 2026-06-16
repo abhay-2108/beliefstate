@@ -1,11 +1,11 @@
-from typing import List
+from typing import List, Any
 from beliefstate.store.base import Store
 from beliefstate.models import Belief
 
 try:
     import redis.asyncio as redis
 except ImportError:
-    redis = None
+    redis = None  # type: ignore[assignment]
 
 
 class RedisStore(Store):
@@ -13,6 +13,7 @@ class RedisStore(Store):
 
     def __init__(self, redis_url: str = "redis://localhost:6379/0"):
         self.redis_url = redis_url
+        self._client: Any
         if not redis:
             self._client = None
         else:

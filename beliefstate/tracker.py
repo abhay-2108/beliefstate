@@ -41,6 +41,7 @@ class BeliefTracker:
         self.internal_adapter = ResilientAdapterWrapper(raw_internal, self.config)
 
         # Initialize store based on config if not provided
+        self.store: Store
         if store is None:
             self.store = SQLiteStore(
                 db_path=self.config.store_kwargs.get("db_path", "beliefstate.db")
@@ -84,7 +85,7 @@ class BeliefTracker:
             else:
                 self.dispatcher = AsyncioDispatcher()
 
-    def set_session(self, session_id: str):
+    def set_session(self, session_id: str) -> None:
         """Set the session ID for the current execution context."""
         session_context.set(session_id)
 
@@ -150,7 +151,7 @@ class BeliefTracker:
 
     async def _track_background(
         self, call: LLMCall, response: LLMResponse, session_id: str, turn: int
-    ):
+    ) -> None:
         """The background pipeline for extracting, detecting, and resolving beliefs."""
         try:
             new_beliefs = []
@@ -225,11 +226,13 @@ class BeliefTracker:
             pass
         asyncio.run(self.track_async(call_dict, response_dict, session_id, turn))
 
-    def wrap(self, func: Callable[..., Coroutine[Any, Any, Any]]):
+    def wrap(
+        self, func: Callable[..., Coroutine[Any, Any, Any]]
+    ) -> Callable[..., Coroutine[Any, Any, Any]]:
         """Decorator to wrap an async LLM function and track beliefs."""
 
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             session_id = session_context.get()
             self.turn_counter += 1
             current_turn = self.turn_counter

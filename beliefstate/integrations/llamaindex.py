@@ -17,7 +17,7 @@ except ImportError:
     HAS_LLAMAINDEX = False
 
 
-class LlamaIndexBeliefTrackerCallback(BaseCallbackHandler):
+class LlamaIndexBeliefTrackerCallback(BaseCallbackHandler):  # type: ignore[misc]
     """
     LlamaIndex callback handler to automatically track beliefs from chat generations.
     Hooks into LlamaIndex's event system to intercept completions and embeddings.

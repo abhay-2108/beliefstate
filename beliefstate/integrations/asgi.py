@@ -1,3 +1,4 @@
+from typing import Any
 from beliefstate.tracker import session_context
 
 
@@ -7,11 +8,11 @@ class BeliefTrackerASGIMiddleware:
     to automatically extract a session ID from a request header and set it in the tracker's context.
     """
 
-    def __init__(self, app, header_name: str = "x-session-id"):
+    def __init__(self, app: Any, header_name: str = "x-session-id") -> None:
         self.app = app
         self.header_name = header_name.lower().encode("latin1")
 
-    async def __call__(self, scope, receive, send):
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
         if scope["type"] not in ("http", "websocket"):
             await self.app(scope, receive, send)
             return

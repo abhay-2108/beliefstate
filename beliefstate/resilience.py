@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import Any, List, Callable, Coroutine, Optional
+from typing import Any, List, Callable, Coroutine, Optional, cast
 from tenacity import (
     AsyncRetrying,
     wait_exponential,
@@ -69,7 +69,7 @@ class CircuitBreaker:
         return False
 
 
-def is_transient_error(exc: Exception) -> bool:
+def is_transient_error(exc: BaseException) -> bool:
     """Identify if an exception is transient and worth retrying."""
     # 1. Do not retry on common developer errors
     if isinstance(
@@ -169,7 +169,7 @@ class ResilientAdapterWrapper(ProviderAdapter):
             recovery_timeout=config.circuit_breaker_recovery_timeout,
         )
 
-    def to_llm_call(self, *args, **kwargs) -> LLMCall:
+    def to_llm_call(self, *args: Any, **kwargs: Any) -> LLMCall:
         return self.adapter.to_llm_call(*args, **kwargs)
 
     def to_llm_response(self, response: Any) -> LLMResponse:
@@ -178,24 +178,33 @@ class ResilientAdapterWrapper(ProviderAdapter):
     async def generate(
         self, call: LLMCall, response_format: Optional[Any] = None
     ) -> LLMResponse:
-        return await self._execute_with_resilience(
-            lambda: self.adapter.generate(call, response_format=response_format),
-            self.llm_breaker,
-            "generate",
+        return cast(
+            LLMResponse,
+            await self._execute_with_resilience(
+                lambda: self.adapter.generate(call, response_format=response_format),
+                self.llm_breaker,
+                "generate",
+            ),
         )
 
     async def get_embedding(self, text: str) -> List[float]:
-        return await self._execute_with_resilience(
-            lambda: self.adapter.get_embedding(text),
-            self.embed_breaker,
-            "get_embedding",
+        return cast(
+            List[float],
+            await self._execute_with_resilience(
+                lambda: self.adapter.get_embedding(text),
+                self.embed_breaker,
+                "get_embedding",
+            ),
         )
 
     async def get_embeddings(self, texts: List[str]) -> List[List[float]]:
-        return await self._execute_with_resilience(
-            lambda: self.adapter.get_embeddings(texts),
-            self.embed_breaker,
-            "get_embeddings",
+        return cast(
+            List[List[float]],
+            await self._execute_with_resilience(
+                lambda: self.adapter.get_embeddings(texts),
+                self.embed_breaker,
+                "get_embeddings",
+            ),
         )
 
     async def _execute_with_resilience(

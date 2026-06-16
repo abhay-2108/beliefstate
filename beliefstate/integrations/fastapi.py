@@ -11,7 +11,7 @@ class FastAPIBeliefTrackerMiddleware(BeliefTrackerASGIMiddleware):
     via request.state.session_id.
     """
 
-    async def __call__(self, scope: dict, receive: Any, send: Any) -> None:
+    async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
         if scope["type"] not in ("http", "websocket"):
             await self.app(scope, receive, send)
             return

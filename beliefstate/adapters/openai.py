@@ -5,7 +5,7 @@ from beliefstate.call import LLMCall, LLMResponse
 try:
     from openai import AsyncOpenAI
 except ImportError:
-    AsyncOpenAI = Any
+    AsyncOpenAI = Any  # type: ignore[misc, assignment]
 
 
 class OpenAIAdapter(ProviderAdapter):
@@ -32,7 +32,7 @@ class OpenAIAdapter(ProviderAdapter):
             except ImportError:
                 self.client = None
 
-    def to_llm_call(self, *args, **kwargs) -> LLMCall:
+    def to_llm_call(self, *args: Any, **kwargs: Any) -> LLMCall:
         messages = kwargs.get("messages", [])
         if not messages and len(args) > 0 and isinstance(args[0], list):
             messages = args[0]

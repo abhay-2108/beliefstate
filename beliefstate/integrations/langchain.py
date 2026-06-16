@@ -9,9 +9,9 @@ try:
     from langchain_core.outputs import LLMResult
     from langchain_core.messages import BaseMessage
 except ImportError:
-    AsyncCallbackHandler = object
-    LLMResult = Any
-    BaseMessage = Any
+    AsyncCallbackHandler = object  # type: ignore[misc, assignment]
+    LLMResult = Any  # type: ignore[misc, assignment]
+    BaseMessage = Any  # type: ignore[misc, assignment]
 
 
 class BeliefTrackerLangchainCallback(AsyncCallbackHandler):
@@ -92,6 +92,7 @@ class BeliefTrackerLangchainCallback(AsyncCallbackHandler):
 
         text = response.generations[0][0].text
         # Safely dump response to dict if it's a pydantic model (supporting both v1 and v2)
+        raw: Any
         if hasattr(response, "model_dump"):
             raw = response.model_dump()
         elif hasattr(response, "dict"):

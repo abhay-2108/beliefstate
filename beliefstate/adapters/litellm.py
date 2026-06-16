@@ -29,7 +29,7 @@ class LiteLLMAdapter(ProviderAdapter):
         self.embed_kwargs = embed_kwargs or {}
         self.kwargs = kwargs
 
-    def to_llm_call(self, *args, **kwargs) -> LLMCall:
+    def to_llm_call(self, *args: Any, **kwargs: Any) -> LLMCall:
         messages = kwargs.get("messages", [])
         if not messages and len(args) > 0 and isinstance(args[0], list):
             messages = args[0]

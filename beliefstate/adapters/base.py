@@ -6,7 +6,7 @@ from beliefstate.call import LLMCall, LLMResponse
 class ProviderAdapter(Protocol):
     """Protocol for translating between native SDK formats and our universal models."""
 
-    def to_llm_call(self, *args, **kwargs) -> LLMCall:
+    def to_llm_call(self, *args: Any, **kwargs: Any) -> LLMCall:
         """Convert native args/kwargs into a universal LLMCall."""
         ...
 

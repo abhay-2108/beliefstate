@@ -6,8 +6,8 @@ try:
     from google import genai
     from google.genai import types
 except ImportError:
-    genai = Any
-    types = Any
+    genai = Any  # type: ignore[assignment]
+    types = Any  # type: ignore[assignment]
 
 
 class GeminiAdapter(ProviderAdapter):
@@ -34,7 +34,7 @@ class GeminiAdapter(ProviderAdapter):
             except (ImportError, Exception):
                 self.client = None
 
-    def to_llm_call(self, *args, **kwargs) -> LLMCall:
+    def to_llm_call(self, *args: Any, **kwargs: Any) -> LLMCall:
         contents = kwargs.get("contents", [])
         if not contents and len(args) > 0:
             contents = args[0]
@@ -96,7 +96,7 @@ class GeminiAdapter(ProviderAdapter):
         for m in call.messages:
             formatted_contents += f"{m.get('role', 'user')}: {m.get('content', '')}\n"
 
-        config_args = {}
+        config_args: Dict[str, Any] = {}
         if call.system:
             config_args["system_instruction"] = call.system
 

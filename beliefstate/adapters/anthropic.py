@@ -5,7 +5,7 @@ from beliefstate.call import LLMCall, LLMResponse
 try:
     from anthropic import AsyncAnthropic
 except ImportError:
-    AsyncAnthropic = Any
+    AsyncAnthropic = Any  # type: ignore[misc, assignment]
 
 
 class AnthropicAdapter(ProviderAdapter):
@@ -32,7 +32,7 @@ class AnthropicAdapter(ProviderAdapter):
             except (ImportError, Exception):
                 self.client = None
 
-    def to_llm_call(self, *args, **kwargs) -> LLMCall:
+    def to_llm_call(self, *args: Any, **kwargs: Any) -> LLMCall:
         messages = kwargs.get("messages", [])
         if not messages and len(args) > 0 and isinstance(args[0], list):
             messages = args[0]

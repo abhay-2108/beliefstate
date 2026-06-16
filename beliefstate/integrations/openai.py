@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from beliefstate.tracker import BeliefTracker, session_context
 from beliefstate.call import LLMCall, LLMResponse
 
@@ -11,7 +11,7 @@ try:
 
     HAS_OPENAI = True
 except ImportError:
-    AsyncOpenAI = Any
+    AsyncOpenAI = Any  # type: ignore[misc, assignment]
     HAS_OPENAI = False
 
 
@@ -22,8 +22,8 @@ def process_openai_assistant_message(
     Reconstructs the LLMCall and LLMResponse from the thread messages for a specific run.
     thread_messages should be a list of OpenAI Message objects (ordered newest first, as returned by API).
     """
-    response_texts = []
-    call_messages = []
+    response_texts: List[str] = []
+    call_messages: List[Dict[str, Any]] = []
 
     found_run_msg = False
     for msg in thread_messages:

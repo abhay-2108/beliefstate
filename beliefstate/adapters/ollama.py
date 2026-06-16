@@ -1,11 +1,11 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from beliefstate.adapters.base import ProviderAdapter
 from beliefstate.call import LLMCall, LLMResponse
 
 try:
     from ollama import AsyncClient
 except ImportError:
-    AsyncClient = Any
+    AsyncClient = Any  # type: ignore[misc, assignment]
 
 
 def _dereference_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
@@ -13,7 +13,8 @@ def _dereference_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(schema, dict):
         return schema
 
-    defs = schema.get("$defs", schema.get("definitions", {}))
+    defs_val = schema.get("$defs") or schema.get("definitions") or {}
+    defs: Dict[str, Any] = defs_val if isinstance(defs_val, dict) else {}
 
     def resolve(node: Any) -> Any:
         if isinstance(node, dict):
@@ -32,6 +33,8 @@ def _dereference_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
         return node
 
     new_schema = resolve(schema)
+    if not isinstance(new_schema, dict):
+        return {}
     new_schema.pop("$defs", None)
     new_schema.pop("definitions", None)
     return new_schema
@@ -61,7 +64,7 @@ class OllamaAdapter(ProviderAdapter):
             except (ImportError, Exception):
                 self.client = None
 
-    def to_llm_call(self, *args, **kwargs) -> LLMCall:
+    def to_llm_call(self, *args: Any, **kwargs: Any) -> LLMCall:
         messages = kwargs.get("messages", [])
         if not messages and len(args) > 1 and isinstance(args[1], list):
             messages = args[1]
@@ -125,7 +128,7 @@ class OllamaAdapter(ProviderAdapter):
             emb_args.update(self.embed_kwargs)
 
         response = await self.client.embeddings(**emb_args)
-        return response.get("embedding", [])
+        return cast(List[float], response.get("embedding", []))
 
     async def get_embeddings(self, texts: List[str]) -> List[List[float]]:
         if not self.client:
@@ -142,7 +145,7 @@ class OllamaAdapter(ProviderAdapter):
                     embed_args.update(self.embed_kwargs)
                 response = await self.client.embed(**embed_args)
                 if "embeddings" in response:
-                    return response["embeddings"]
+                    return cast(List[List[float]], response["embeddings"])
             except Exception as e:
                 import logging
 

@@ -6,7 +6,7 @@ from beliefstate.models import Belief
 try:
     import aiosqlite
 except ImportError:
-    aiosqlite = None
+    aiosqlite = None  # type: ignore[assignment]
 
 
 def cosine_similarity_py(emb1_str: str, emb2_json_str: str) -> float:
@@ -23,7 +23,7 @@ def cosine_similarity_py(emb1_str: str, emb2_json_str: str) -> float:
         mag2 = math.sqrt(sum(b * b for b in v2))
         if mag1 == 0.0 or mag2 == 0.0:
             return 0.0
-        return dot / (mag1 * mag2)
+        return float(dot / (mag1 * mag2))
     except Exception:
         return 0.0
 
@@ -35,7 +35,7 @@ class SQLiteStore(Store):
         self.db_path = db_path
         self._conn: Optional[Any] = None
 
-    async def _get_connection(self):
+    async def _get_connection(self) -> Any:
         if not aiosqlite:
             raise RuntimeError(
                 "aiosqlite is not installed. Run `pip install aiosqlite`"
@@ -55,8 +55,10 @@ class SQLiteStore(Store):
             await self._init_db()
         return self._conn
 
-    async def _init_db(self):
+    async def _init_db(self) -> None:
         conn = self._conn
+        if conn is None:
+            return
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS beliefs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
