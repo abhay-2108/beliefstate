@@ -231,7 +231,6 @@ from beliefstate.integrations.asgi import BeliefTrackerASGIMiddleware
 app = FastAPI()
 app.add_middleware(
     BeliefTrackerASGIMiddleware, 
-    tracker=tracker, 
     header_name="X-Session-ID"
 )
 ```
@@ -246,8 +245,7 @@ from beliefstate.integrations.wsgi import BeliefTrackerWSGIMiddleware
 app = Flask(__name__)
 app.wsgi_app = BeliefTrackerWSGIMiddleware(
     app.wsgi_app, 
-    tracker=tracker, 
-    environ_key="HTTP_X_SESSION_ID"
+    header_name="X-Session-ID"
 )
 ```
 
@@ -256,9 +254,13 @@ Allows seamless interception of LangChain chain executions without wrapping func
 
 ```python
 from langchain_openai import ChatOpenAI
+from beliefstate import session_context
 from beliefstate.integrations.langchain import BeliefTrackerLangchainCallback
 
-callback = BeliefTrackerLangchainCallback(tracker=tracker, session_id="user_123")
+# Set session ID context
+session_context.set("user_123")
+
+callback = BeliefTrackerLangchainCallback(tracker=tracker)
 model = ChatOpenAI(callbacks=[callback])
 ```
 

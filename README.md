@@ -207,19 +207,27 @@ BeliefState ships with helpers for major frameworks to handle session tracking a
 ### FastAPI (ASGI)
 ```python
 from fastapi import FastAPI
-from beliefstate.integrations.asgi import BeliefStateMiddleware
+from beliefstate.integrations.asgi import BeliefTrackerASGIMiddleware
 
 app = FastAPI()
-app.add_middleware(BeliefStateMiddleware, tracker=tracker)
-# Automatically sets `session_id` using the "X-User-ID" header
+app.add_middleware(
+    BeliefTrackerASGIMiddleware,
+    header_name="X-Session-ID"
+)
+# Automatically sets session_context from incoming header X-Session-ID
 ```
 
 ### LangChain
 ```python
-from beliefstate.integrations.langchain import BeliefStateCallbackHandler
+from beliefstate import session_context
+from beliefstate.integrations.langchain import BeliefTrackerLangchainCallback
 
-handler = BeliefStateCallbackHandler(tracker, session_id="user_123")
-llm.invoke("Hello!", config={"callbacks": [handler]})
+# 1. Set active session ID context
+session_context.set("user_123")
+
+# 2. Initialize and attach callback
+handler = BeliefTrackerLangchainCallback(tracker=tracker)
+await llm.ainvoke("Hello!", config={"callbacks": [handler]})
 ```
 
 ---

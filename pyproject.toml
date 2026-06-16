@@ -56,11 +56,8 @@ redis = [
 langchain = [
     "langchain-core>=0.2.0",
 ]
-llamaindex = [
-    "llama-index-core>=0.10.0",
-]
 all = [
-    "beliefstate[openai,anthropic,gemini,ollama,litellm,local,redis,langchain,llamaindex]",
+    "beliefstate[openai,anthropic,gemini,ollama,litellm,local,redis,langchain]",
 ]
 dev = [
     "pytest>=7.0",
