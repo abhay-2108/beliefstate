@@ -55,7 +55,7 @@ jobs:
 
     - name: Run Pytest
       run: |
-        pytest -v --tb=short
+        pytest -v --tb=short -m "not requires_optional_deps"
 
     - name: Upload coverage reports
       if: matrix.python-version == '3.11'

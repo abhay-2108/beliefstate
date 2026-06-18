@@ -4,20 +4,56 @@ from typing import Optional
 
 from beliefstate import (
     session_context,
-    FastAPIBeliefTrackerMiddleware,
-    get_session_id,
-    FlaskBeliefTrackerMiddleware,
-    register_flask_hooks,
-    LlamaIndexBeliefTrackerCallback,
-    process_openai_assistant_message,
-    observe_run,
-    BeliefTrackerLangchainCallback,
+    BeliefTracker,
+    TrackerConfig,
+    Belief,
 )
+
+# Try to import optional dependencies
+try:
+    from beliefstate import (
+        FastAPIBeliefTrackerMiddleware,
+        get_session_id,
+    )
+    HAS_FASTAPI = True
+except ImportError:
+    HAS_FASTAPI = False
+
+try:
+    from beliefstate import (
+        FlaskBeliefTrackerMiddleware,
+        register_flask_hooks,
+    )
+    HAS_FLASK = True
+except ImportError:
+    HAS_FLASK = False
+
+try:
+    from beliefstate import LlamaIndexBeliefTrackerCallback
+    HAS_LLAMAINDEX = True
+except ImportError:
+    HAS_LLAMAINDEX = False
+
+try:
+    from beliefstate import (
+        process_openai_assistant_message,
+        observe_run,
+    )
+    HAS_OPENAI_INTEGRATION = True
+except ImportError:
+    HAS_OPENAI_INTEGRATION = False
+
+try:
+    from beliefstate import BeliefTrackerLangchainCallback
+    HAS_LANGCHAIN = True
+except ImportError:
+    HAS_LANGCHAIN = False
 
 
 # --- FastAPI Middleware & Dependency Tests ---
 
 
+@pytest.mark.skipif(not HAS_FASTAPI, reason="FastAPI not installed")
 @pytest.mark.asyncio
 async def test_fastapi_middleware_context_propagation():
     token_val = None
@@ -48,6 +84,7 @@ async def test_fastapi_middleware_context_propagation():
     assert session_context.get() == "default"
 
 
+@pytest.mark.skipif(not HAS_FASTAPI, reason="FastAPI not installed")
 @pytest.mark.asyncio
 async def test_fastapi_dependency_injection():
     # 1. Test when header is present
@@ -77,6 +114,7 @@ async def test_fastapi_dependency_injection():
 # --- Flask Middleware & Hooks Tests ---
 
 
+@pytest.mark.skipif(not HAS_FLASK, reason="Flask not installed")
 def test_flask_middleware_context_propagation():
     token_val = None
 
@@ -97,6 +135,7 @@ def test_flask_middleware_context_propagation():
     assert session_context.get() == "default"
 
 
+@pytest.mark.skipif(not HAS_FLASK, reason="Flask not installed")
 def test_flask_request_hooks():
     from flask import Flask, g
 
@@ -134,6 +173,7 @@ class MockResponse:
         return {"text": self.text}
 
 
+@pytest.mark.skipif(not HAS_LLAMAINDEX, reason="LlamaIndex not installed")
 @pytest.mark.asyncio
 async def test_llamaindex_callback_handler():
     mock_tracker = MagicMock()
@@ -216,6 +256,7 @@ class MockOpenAIMessage:
         }
 
 
+@pytest.mark.skipif(not HAS_OPENAI_INTEGRATION, reason="OpenAI integration not installed")
 def test_process_openai_assistant_message():
     thread_messages = [
         MockOpenAIMessage(
@@ -239,6 +280,7 @@ def test_process_openai_assistant_message():
     assert call.messages[2]["content"] == "Who am I speaking with?"
 
 
+@pytest.mark.skipif(not HAS_OPENAI_INTEGRATION, reason="OpenAI integration not installed")
 @pytest.mark.asyncio
 async def test_observe_run_polling_and_dispatch():
     mock_tracker = MagicMock()
@@ -322,6 +364,7 @@ class MockLLMResult:
         }
 
 
+@pytest.mark.skipif(not HAS_LANGCHAIN, reason="LangChain not installed")
 @pytest.mark.asyncio
 async def test_langchain_callback_handler():
     mock_tracker = MagicMock()

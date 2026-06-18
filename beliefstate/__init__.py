@@ -39,62 +39,6 @@ from beliefstate.dispatcher import (
     execute_tracking_task,
 )
 
-# Integration Exports (optional dependencies - graceful degradation)
-try:
-    from beliefstate.integrations.fastapi import (
-        FastAPIBeliefTrackerMiddleware,
-        get_session_id,
-    )
-except ImportError:
-    FastAPIBeliefTrackerMiddleware = None
-    get_session_id = None
-
-try:
-    from beliefstate.integrations.flask import (
-        FlaskBeliefTrackerMiddleware,
-        register_flask_hooks,
-    )
-except ImportError:
-    FlaskBeliefTrackerMiddleware = None
-    register_flask_hooks = None
-
-try:
-    from beliefstate.integrations.llamaindex import (
-        LlamaIndexBeliefTrackerCallback
-    )
-except ImportError:
-    LlamaIndexBeliefTrackerCallback = None
-
-try:
-    from beliefstate.integrations.openai import (
-        process_openai_assistant_message,
-        observe_run,
-    )
-except ImportError:
-    process_openai_assistant_message = None
-    observe_run = None
-
-try:
-    from beliefstate.integrations.langchain import (
-        BeliefTrackerLangchainCallback
-    )
-except ImportError:
-    BeliefTrackerLangchainCallback = None
-
-# Observability Exports (optional dependencies)
-try:
-    from beliefstate.observability import (
-        setup_otel,
-        trace_sync,
-        trace_async,
-        BeliefTrackerMetrics,
-    )
-except ImportError:
-    setup_otel = None
-    trace_sync = None
-    trace_async = None
-    BeliefTrackerMetrics = None
-
 __all__ = [
     "LLMCall",
     "LLMResponse",
@@ -126,16 +70,4 @@ __all__ = [
     "ContradictionJudge",
     "LLMJudge",
     "LocalNLIJudge",
-    "FastAPIBeliefTrackerMiddleware",
-    "get_session_id",
-    "FlaskBeliefTrackerMiddleware",
-    "register_flask_hooks",
-    "LlamaIndexBeliefTrackerCallback",
-    "process_openai_assistant_message",
-    "observe_run",
-    "BeliefTrackerLangchainCallback",
-    "setup_otel",
-    "trace_sync",
-    "trace_async",
-    "BeliefTrackerMetrics",
 ]
