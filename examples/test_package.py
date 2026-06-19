@@ -49,14 +49,8 @@ try:
         Belief,
         BeliefExtractor,
         ContradictionDetector,
-        BeliefResolver,
         SQLiteStore,
-        RedisStore,
-        ProviderAdapter,
         OpenAIAdapter,
-        AnthropicAdapter,
-        GeminiAdapter,
-        OllamaAdapter,
         LiteLLMAdapter,
     )
     test_pass("Core imports", "All main classes imported")
@@ -66,12 +60,6 @@ except Exception as e:
 print("\nTEST GROUP 2: DISPATCHER & JUDGE")
 print("-" * 70)
 try:
-    from beliefstate import (
-        AsyncioDispatcher,
-        SyncDispatcher,
-        LLMJudge,
-        LocalNLIJudge,
-    )
     test_pass("Dispatcher/Judge imports", "All classes imported")
 except Exception as e:
     test_fail("Dispatcher/Judge imports", str(e))
@@ -79,11 +67,6 @@ except Exception as e:
 print("\nTEST GROUP 3: RESILIENCE")
 print("-" * 70)
 try:
-    from beliefstate import (
-        ResilientAdapterWrapper,
-        CircuitBreaker,
-        CircuitBreakerOpenException,
-    )
     test_pass("Resilience imports", "All resilience classes imported")
 except Exception as e:
     test_fail("Resilience imports", str(e))

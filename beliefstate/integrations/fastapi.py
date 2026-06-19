@@ -3,7 +3,7 @@ from typing import Optional, AsyncGenerator, Any
 from fastapi import Header, Request
 from beliefstate.tracker import session_context
 from beliefstate.integrations.asgi import BeliefTrackerASGIMiddleware
-from beliefstate.integrations.common import IntegrationLogger, validate_session_id, track_request
+from beliefstate.integrations.common import IntegrationLogger, validate_session_id
 
 logger = logging.getLogger(__name__)
 

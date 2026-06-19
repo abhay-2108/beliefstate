@@ -1,5 +1,4 @@
 """Tests verifying lazy imports work — the package must import without optional SDKs."""
-import pytest
 
 
 class TestCoreImports:

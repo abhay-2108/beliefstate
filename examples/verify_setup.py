@@ -12,10 +12,10 @@ def check_imports():
     """Check all required imports."""
     print("1️⃣  Checking imports...")
     try:
-        from beliefstate import BeliefTracker, TrackerConfig
-        from beliefstate.adapters.ollama import OllamaAdapter
-        from openai import AsyncOpenAI
-        import streamlit
+        from beliefstate import BeliefTracker, TrackerConfig  # noqa: F401
+        from beliefstate.adapters.ollama import OllamaAdapter  # noqa: F401
+        from openai import AsyncOpenAI  # noqa: F401
+        import streamlit  # noqa: F401
         print("   ✅ All imports successful")
         return True
     except ImportError as e:

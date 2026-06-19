@@ -1,5 +1,4 @@
 import asyncio
-import json
 from beliefstate.config import TrackerConfig
 from beliefstate.adapters.openai import OpenAIAdapter
 from beliefstate.tracker import BeliefTracker

@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict, Set
+from typing import List, Tuple, Dict
 import logging
 from beliefstate.models import Belief
 from beliefstate.store.base import Store

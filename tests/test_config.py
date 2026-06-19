@@ -1,5 +1,4 @@
 """Tests for TrackerConfig defaults and overrides."""
-import pytest
 
 from beliefstate.config import TrackerConfig
 

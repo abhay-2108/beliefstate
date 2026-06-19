@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Dict, Any
 from collections import OrderedDict
 import logging
 from beliefstate.store.base import Store

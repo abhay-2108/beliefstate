@@ -228,4 +228,5 @@ def test_optional_imports():
                 beliefstate.FlaskBeliefTrackerMiddleware is not None
     
     # We can check without failing
-    assert True  # Package imports successfully regardless
+    assert isinstance(has_fastapi, bool)
+    assert isinstance(has_flask, bool)

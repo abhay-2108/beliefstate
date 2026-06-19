@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional
 from beliefstate.adapters.base import ProviderAdapter
 from beliefstate.adapters.common import (
     RetryConfig,
-    is_transient_error,
     retry_with_backoff,
     with_timeout,
     validate_api_key,

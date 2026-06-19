@@ -2,7 +2,6 @@
 
 All tests exercise pure functions (no mocks or I/O needed).
 """
-import pytest
 
 from beliefstate.extractor import (
     normalize_numbers,

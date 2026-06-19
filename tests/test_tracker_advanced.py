@@ -1,6 +1,6 @@
 """Advanced tests for BeliefTracker — helpers, GDPR, context injection, staleness, stats."""
 import pytest
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import MagicMock
 from datetime import datetime, timezone, timedelta
 
 from beliefstate.config import TrackerConfig
