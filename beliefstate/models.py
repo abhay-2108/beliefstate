@@ -1,5 +1,5 @@
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 
@@ -31,7 +31,7 @@ class Belief(BaseModel):
         description="Dimensionality of the embedding vector (e.g., 384 for MiniLM, 1536 for text-embedding-3-small). Prevents silent cosine corruption on model upgrade.",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="UTC timestamp when this belief was created.",
     )
     session_id: Optional[str] = Field(
@@ -51,6 +51,6 @@ class Belief(BaseModel):
         description="True if belief is from a hypothetical scenario (if/imagine/example). Excluded from prompt injection.",
     )
     last_referenced_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="UTC timestamp when this belief was last referenced/used in a session.",
     )

@@ -9,7 +9,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    name: Lint and Type Check (Non-blocking)
+    name: Lint and Type Check
 
     steps:
     - uses: actions/checkout@v4
@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: "3.11"
+        python-version: "3.12"
         cache: 'pip'
 
     - name: Install dependencies
@@ -27,20 +27,12 @@ jobs:
         python -m pip install ruff mypy
 
     - name: Run Ruff Linter
-      continue-on-error: true
-      run: |
-        ruff check . || echo "Ruff check found issues (non-blocking)"
+      run: ruff check .
 
     - name: Run Ruff Formatter Check
-      continue-on-error: true
-      run: |
-        ruff format --check . || echo "Ruff format issues found (non-blocking)"
+      run: ruff format --check .
 
-    - name: Run Mypy Type Checker
+    - name: Run Mypy Type Checker (non-blocking)
       continue-on-error: true
       run: |
         mypy beliefstate || echo "Mypy found type issues (non-blocking)"
-
-    - name: Summary
-      run: |
-        echo "Lint and type check completed. Issues are non-blocking."

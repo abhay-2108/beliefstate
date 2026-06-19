@@ -76,7 +76,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["beliefstate", "belief_tracker"]
+packages = ["beliefstate"]
 
 [tool.mypy]
 strict = true

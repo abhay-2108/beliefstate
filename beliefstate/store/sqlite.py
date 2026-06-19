@@ -361,11 +361,11 @@ class SQLiteStore(Store):
             Number of beliefs deleted
         """
         import logging
-        from datetime import timedelta
+        from datetime import timedelta, timezone
 
         logger = logging.getLogger(__name__)
         conn = await self._get_connection()
-        cutoff_time = (datetime.utcnow() - timedelta(seconds=max_age_seconds)).isoformat()
+        cutoff_time = (datetime.now(timezone.utc) - timedelta(seconds=max_age_seconds)).isoformat()
 
         if session_id:
             cursor = await conn.execute(

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from typing import Any, Callable, Coroutine, Dict, List, Optional, TypeVar
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 from contextvars import ContextVar
 
@@ -29,6 +29,17 @@ T = TypeVar("T")
 _session_locks: Dict[str, asyncio.Lock] = {}
 
 
+def _ensure_aware(dt: datetime) -> datetime:
+    """Ensure a datetime is timezone-aware (UTC).
+    
+    Existing beliefs stored before the utcnow→now(utc) migration may have
+    naive timestamps.  This helper normalises them so arithmetic works.
+    """
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 def calculate_staleness_score(belief: Any) -> float:
     """Calculate staleness score for a belief.
     
@@ -46,12 +57,13 @@ def calculate_staleness_score(belief: Any) -> float:
         ref_time = (
             belief.created_at
             if hasattr(belief, 'created_at')
-            else datetime.utcnow()
+            else datetime.now(timezone.utc)
         )
     else:
         ref_time = belief.last_referenced_at
     
-    days_since_referenced = (datetime.utcnow() - ref_time).days
+    ref_time = _ensure_aware(ref_time)
+    days_since_referenced = (datetime.now(timezone.utc) - ref_time).days
     confidence = getattr(belief, 'confidence', 1.0)
     
     return confidence / (days_since_referenced + 1)
@@ -378,7 +390,7 @@ class BeliefTracker:
         receipt = DeletionReceipt(
             session_id=sid,
             beliefs_deleted=beliefs_deleted,
-            deleted_at=datetime.utcnow(),
+            deleted_at=datetime.now(timezone.utc),
             in_flight_tasks_drained=drained_count,
         )
         logger.info(f"GDPR deletion receipt: {receipt}")
@@ -622,7 +634,7 @@ class BeliefTracker:
         beliefs = await self.store.get_beliefs(sid)
         for b in beliefs:
             if b.subject == subject and b.predicate == predicate:
-                b.last_referenced_at = datetime.utcnow()
+                b.last_referenced_at = datetime.now(timezone.utc)
                 await self.store.update_belief(sid, b)
                 logger.debug(
                     f"Updated reference time for belief: {subject} "
