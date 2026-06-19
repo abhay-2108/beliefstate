@@ -59,8 +59,14 @@ langchain = [
 llamaindex = [
     "llama-index-core>=0.10.0",
 ]
+fastapi = [
+    "fastapi>=0.95.0",
+]
+flask = [
+    "flask>=2.2.0",
+]
 all = [
-    "beliefstate[openai,anthropic,gemini,ollama,litellm,local,redis,langchain,llamaindex]",
+    "beliefstate[openai,anthropic,gemini,ollama,litellm,local,redis,langchain,llamaindex,fastapi,flask]",
 ]
 dev = [
     "pytest>=7.0",
