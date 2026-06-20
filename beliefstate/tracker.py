@@ -270,7 +270,7 @@ class BeliefTracker:
         self.extractor: Optional[BeliefExtractor] = None
         self.detector: Optional[ContradictionDetector] = None
         self.resolver = BeliefResolver(store=self.store, strategy="overwrite")
-        self.turn_counter = 0
+        self._session_turn_counters: Dict[str, int] = {}
 
         # Track latest processed turn per session for optimistic concurrency
         # control. This helps detect out-of-order completions
@@ -304,6 +304,45 @@ class BeliefTracker:
                 self.dispatcher = RQDispatcher(**kwargs)
             else:
                 self.dispatcher = AsyncioDispatcher()
+
+    @property
+    def turn_counter(self) -> int:
+        """Backward-compatible turn counter.
+
+        Returns the maximum turn number across all sessions.
+        For per-session turn tracking, use ``get_session_turn(session_id)``.
+        """
+        if not self._session_turn_counters:
+            return 0
+        return max(self._session_turn_counters.values())
+
+    @turn_counter.setter
+    def turn_counter(self, value: int) -> None:
+        """Backward-compatible setter (sets for 'default' session)."""
+        self._session_turn_counters["default"] = value
+
+    def get_session_turn(self, session_id: Optional[str] = None) -> int:
+        """Get the current turn number for a specific session.
+
+        Args:
+            session_id: Session ID (defaults to current context)
+
+        Returns:
+            Current turn number for the session (0 if no turns yet)
+        """
+        sid = session_id or session_context.get()
+        return self._session_turn_counters.get(sid, 0)
+
+    async def __aenter__(self) -> "BeliefTracker":
+        """Async context manager entry — opens the store connection."""
+        if hasattr(self.store, "open"):
+            await self.store.open()
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        """Async context manager exit — closes the store connection."""
+        if hasattr(self.store, "close"):
+            await self.store.close()
 
     def _ensure_initialized(self) -> None:
         """Ensure extractor and detector are initialized (lazy init for auto-detect)."""
@@ -387,7 +426,13 @@ class BeliefTracker:
         self.resolver.clear_session(sid)
         logger.info(f"Cleared conflict history for session {sid}")
 
-        # 4. Return auditable receipt
+        # 4. Clean up session-scoped state to prevent memory leaks
+        self._session_turn_counters.pop(sid, None)
+        self._session_turn_states.pop(sid, None)
+        self._session_providers.pop(sid, None)
+        _session_locks.pop(sid, None)
+
+        # 5. Return auditable receipt
         receipt = DeletionReceipt(
             session_id=sid,
             beliefs_deleted=beliefs_deleted,
@@ -642,6 +687,109 @@ class BeliefTracker:
                 )
                 break
 
+    async def export_beliefs(
+        self, session_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Export all beliefs for a session as JSON-serializable dicts.
+
+        Useful for:
+        - Migrating between stores (SQLite → Redis)
+        - Debugging production belief state
+        - Creating backups / snapshots
+
+        Args:
+            session_id: Session ID (defaults to current context)
+
+        Returns:
+            List of belief dicts (from Pydantic model_dump)
+
+        Example:
+            data = await tracker.export_beliefs("user-123")
+            with open("backup.json", "w") as f:
+                json.dump(data, f, default=str)
+        """
+        sid = session_id or session_context.get()
+        beliefs = await self.store.get_beliefs(sid)
+        return [b.model_dump(mode="json") for b in beliefs]
+
+    async def import_beliefs(
+        self,
+        session_id: Optional[str] = None,
+        beliefs_data: Optional[List[Dict[str, Any]]] = None,
+    ) -> int:
+        """Import beliefs from a list of dicts into the store.
+
+        Validates each belief via Pydantic before adding.
+        Skips invalid entries with a warning.
+
+        Args:
+            session_id: Session ID (defaults to current context)
+            beliefs_data: List of belief dicts (as exported by export_beliefs)
+
+        Returns:
+            Number of beliefs successfully imported
+
+        Example:
+            with open("backup.json") as f:
+                data = json.load(f)
+            count = await tracker.import_beliefs("user-123", data)
+            print(f"Imported {count} beliefs")
+        """
+        if not beliefs_data:
+            return 0
+
+        sid = session_id or session_context.get()
+        imported = 0
+
+        for item in beliefs_data:
+            try:
+                belief = Belief.model_validate(item)
+                await self.store.add_belief(sid, belief)
+                imported += 1
+            except Exception as e:
+                logger.warning(f"Skipping invalid belief during import: {e}")
+
+        logger.info(f"Imported {imported}/{len(beliefs_data)} beliefs for session {sid}")
+        return imported
+
+    async def health_check(self) -> Dict[str, bool]:
+        """Check health of all tracker components.
+
+        Returns a dict with component health status.
+        Useful for startup validation and readiness probes.
+
+        Returns:
+            Dict with keys: 'store', 'adapter' and bool values
+
+        Example:
+            health = await tracker.health_check()
+            if not health["store"]:
+                raise RuntimeError("Store is unhealthy!")
+        """
+        result: Dict[str, bool] = {"store": False, "adapter": False}
+
+        # Check store health
+        try:
+            if hasattr(self.store, "health_check"):
+                result["store"] = await self.store.health_check()
+            else:
+                # Fallback: try a simple get_beliefs call
+                await self.store.get_beliefs("__health_check__")
+                result["store"] = True
+        except Exception as e:
+            logger.warning(f"Store health check failed: {e}")
+
+        # Check adapter health
+        try:
+            if self.internal_adapter and hasattr(self.internal_adapter, "health_check"):
+                result["adapter"] = await self.internal_adapter.health_check()
+            elif self.app_adapter and hasattr(self.app_adapter, "health_check"):
+                result["adapter"] = await self.app_adapter.health_check()
+        except Exception as e:
+            logger.warning(f"Adapter health check failed: {e}")
+
+        return result
+
     async def get_context_prompt(
         self,
         session_id: Optional[str] = None,
@@ -789,14 +937,28 @@ class BeliefTracker:
         self,
         messages: list[Dict[str, Any]],
         session_id: Optional[str] = None,
+        conversation_id: Optional[str] = None,
         format_template: Optional[str] = None,
+        current_user_message: Optional[str] = None,
     ) -> list[Dict[str, Any]]:
         """
         Inject the current session belief state context into a list of messages.
         If a system message is already present, appends the belief context to it.
         Otherwise, prepends a new system message containing the belief context.
+
+        Args:
+            messages: List of message dicts ({"role": ..., "content": ...})
+            session_id: Session ID (defaults to current context)
+            conversation_id: Conversation ID for multi-thread filtering
+            format_template: Custom template for belief formatting
+            current_user_message: Current user message for relevance-based filtering
         """
-        context_prompt = await self.get_context_prompt(session_id, format_template)
+        context_prompt = await self.get_context_prompt(
+            session_id=session_id,
+            conversation_id=conversation_id,
+            format_template=format_template,
+            current_user_message=current_user_message,
+        )
         if not context_prompt:
             return messages
 
@@ -976,8 +1138,10 @@ class BeliefTracker:
         @wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             session_id = session_context.get()
-            self.turn_counter += 1
-            current_turn = self.turn_counter
+            self._session_turn_counters[session_id] = (
+                self._session_turn_counters.get(session_id, 0) + 1
+            )
+            current_turn = self._session_turn_counters[session_id]
 
             # 1. Execute the user's actual LLM call (blocks until finished)
             native_response = await func(*args, **kwargs)

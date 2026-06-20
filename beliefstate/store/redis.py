@@ -109,6 +109,23 @@ class RedisStore(Store):
 
         await self._client.delete(self._get_key(session_id))
 
+    async def belief_count(self, session_id: str) -> int:
+        """Return belief count using efficient HLEN — no deserialization."""
+        if not self._client:
+            raise RuntimeError(
+                "redis package is not installed. Run `pip install redis`"
+            )
+        return int(await self._client.hlen(self._get_key(session_id)))
+
+    async def health_check(self) -> bool:
+        """Verify Redis connection is functional."""
+        try:
+            if not self._client:
+                return False
+            return bool(await self._client.ping())
+        except Exception:
+            return False
+
     async def set_session_ttl(self, session_id: str, ttl_seconds: int) -> None:
         """Set time-to-live (expiration) for all beliefs in a session.
 

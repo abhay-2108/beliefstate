@@ -14,6 +14,7 @@ from beliefstate.tracker import BeliefTracker, session_context
 from beliefstate.extractor import BeliefExtractor
 from beliefstate.detector import ContradictionDetector
 from beliefstate.resolver import BeliefResolver
+from beliefstate.logging_utils import TrackerEvent, log_event
 
 # Resilience Exports
 from beliefstate.resilience import (
@@ -169,4 +170,7 @@ __all__ = [
     "LlamaIndexBeliefTrackerCallback",
     "process_openai_assistant_message",
     "observe_run",
+    # Structured logging
+    "TrackerEvent",
+    "log_event",
 ]

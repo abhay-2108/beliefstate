@@ -352,6 +352,25 @@ class SQLiteStore(Store):
         await conn.execute("DELETE FROM beliefs WHERE session_id = ?", (session_id,))
         await conn.commit()
 
+    async def belief_count(self, session_id: str) -> int:
+        """Return belief count using efficient SELECT COUNT(*) — no deserialization."""
+        conn = await self._get_connection()
+        async with conn.execute(
+            "SELECT COUNT(*) FROM beliefs WHERE session_id = ?", (session_id,)
+        ) as cursor:
+            row = await cursor.fetchone()
+        return int(row[0]) if row else 0
+
+    async def health_check(self) -> bool:
+        """Verify SQLite connection is functional."""
+        try:
+            conn = await self._get_connection()
+            async with conn.execute("SELECT 1") as cursor:
+                row = await cursor.fetchone()
+            return row is not None
+        except Exception:
+            return False
+
     async def prune_expired_beliefs(
         self, max_age_seconds: int, session_id: Optional[str] = None
     ) -> int:

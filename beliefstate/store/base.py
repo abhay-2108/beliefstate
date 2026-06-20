@@ -39,3 +39,11 @@ class Store(Protocol):
     async def clear(self, session_id: str) -> None:
         """Clear all beliefs for a given session."""
         ...
+
+    async def belief_count(self, session_id: str) -> int:
+        """Return the number of beliefs for a session without full deserialization."""
+        ...
+
+    async def health_check(self) -> bool:
+        """Verify the store backend is reachable and functional."""
+        ...

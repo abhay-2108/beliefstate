@@ -168,6 +168,14 @@ class InMemoryBeliefStore(Store):
             self.current_bytes -= total_size
             logger.debug(f"Cleared session {session_id} (freed {total_size} bytes)")
 
+    async def belief_count(self, session_id: str) -> int:
+        """Return belief count — O(1) dict length check."""
+        return len(self._beliefs.get(session_id, {}))
+
+    async def health_check(self) -> bool:
+        """In-memory store is always healthy."""
+        return True
+
     def get_stats(self) -> Dict[str, Any]:
         """Get statistics about the in-memory store."""
         total_beliefs = sum(len(beliefs) for beliefs in self._beliefs.values())
