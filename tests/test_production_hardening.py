@@ -13,8 +13,7 @@ Covers:
 
 import asyncio
 import pytest
-from unittest.mock import MagicMock, AsyncMock
-from datetime import datetime, timezone
+from unittest.mock import MagicMock
 
 from beliefstate.config import TrackerConfig
 from beliefstate.models import Belief
