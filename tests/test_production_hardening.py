@@ -102,9 +102,7 @@ class TestAsyncContextManager:
 
         async with tracker:
             # Store should be usable
-            await tracker.store.add_belief(
-                "s1", make_belief()
-            )
+            await tracker.store.add_belief("s1", make_belief())
             beliefs = await tracker.get_beliefs("s1")
             assert len(beliefs) == 1
 
@@ -173,9 +171,7 @@ class TestBeliefCount:
         assert await store.belief_count("s1") == 0
         await store.add_belief("s1", make_belief())
         assert await store.belief_count("s1") == 1
-        await store.add_belief(
-            "s1", make_belief(predicate="hates", value="Java")
-        )
+        await store.add_belief("s1", make_belief(predicate="hates", value="Java"))
         assert await store.belief_count("s1") == 2
 
 
@@ -244,8 +240,14 @@ class TestExportImportBeliefs:
         tracker = BeliefTracker(config=config, adapter=mock_adapter)
 
         data = [
-            {"subject": "USER", "predicate": "likes", "value": "Python",
-             "confidence": 1.0, "turn": 1, "source": "user"},
+            {
+                "subject": "USER",
+                "predicate": "likes",
+                "value": "Python",
+                "confidence": 1.0,
+                "turn": 1,
+                "source": "user",
+            },
             {"invalid": "missing required fields"},
         ]
         count = await tracker.import_beliefs("s1", data)

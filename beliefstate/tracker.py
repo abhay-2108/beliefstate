@@ -749,7 +749,9 @@ class BeliefTracker:
             except Exception as e:
                 logger.warning(f"Skipping invalid belief during import: {e}")
 
-        logger.info(f"Imported {imported}/{len(beliefs_data)} beliefs for session {sid}")
+        logger.info(
+            f"Imported {imported}/{len(beliefs_data)} beliefs for session {sid}"
+        )
         return imported
 
     async def health_check(self) -> Dict[str, bool]:
