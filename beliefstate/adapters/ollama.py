@@ -108,7 +108,11 @@ class OllamaAdapter(ProviderAdapter):
             try:
                 from ollama import AsyncClient
 
-                base_url = f"{self.host}:{self.port}"
+                    # Avoid duplicating port if host already includes a port
+                if ":" in self.host.replace("://", ""):
+                    base_url = self.host
+                else:
+                    base_url = f"{self.host}:{self.port}"
                 self.client = AsyncClient(host=base_url)
                 self.log.info(
                     "Initialized",
