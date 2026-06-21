@@ -280,18 +280,19 @@ config = <span class="fn">TrackerConfig</span>(
   <table class="param-table">
     <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
     <tbody>
-      <tr><td><code>extract_prompt_template</code></td><td><code>str</code></td><td><em>(Built-in prompt)</em></td><td>Jinja-style template for the belief extraction prompt. <strong>Must include the <code>{response}</code> placeholder</strong>, which is replaced with the LLM conversation text at runtime. The model's output must be a valid JSON array of belief objects.</td></tr>
+      <tr><td><code>extract_prompt_template</code></td><td><code>str</code></td><td><em>(Built-in prompt)</em></td><td>Legacy/Fallback template for belief extraction. If overridden, it will be used for both user and assistant messages to preserve backward compatibility.</td></tr>
+      <tr><td><code>extract_user_prompt_template</code></td><td><code>str</code></td><td><em>(Built-in prompt)</em></td><td>Template used to extract beliefs from user messages. Maps first-person pronouns to "USER". <strong>Must include the <code>{response}</code> placeholder</strong>.</td></tr>
+      <tr><td><code>extract_assistant_prompt_template</code></td><td><code>str</code></td><td><em>(Built-in prompt)</em></td><td>Template used to extract beliefs from assistant messages. Maps first-person pronouns to "ASSISTANT" and second-person to "USER". <strong>Must include the <code>{response}</code> placeholder</strong>.</td></tr>
     </tbody>
   </table>
 
   <pre><code><span class="code-label">python</span>config = <span class="fn">TrackerConfig</span>(
-    extract_prompt_template=<span class="st">"""Extract beliefs from this text as JSON.
-Return [{"subject": "...", "predicate": "...", "value": "...", "confidence": 0.0-1.0}]
-Text: {response}"""</span>,
+    extract_user_prompt_template=<span class="st">"""Extract beliefs from user text: {response}"""</span>,
+    extract_assistant_prompt_template=<span class="st">"""Extract beliefs from assistant text: {response}"""</span>,
 )</code></pre>
 
   <div class="callout info">
-    <p><strong>ℹ️ Required placeholder:</strong> <code>{response}</code> — Replaced with the conversation text to analyze. If this placeholder is missing, no text will be provided to the model and extraction will fail.</p>
+    <p><strong>ℹ️ Prompt Routing & Pronoun Mapping Bias:</strong> By default, BeliefState automatically routes user inputs to <code>extract_user_prompt_template</code> and assistant responses to <code>extract_assistant_prompt_template</code>. This ensures that first-person pronouns ("I", "my") are mapped correctly to "USER" or "ASSISTANT" respectively. If you customize <code>extract_prompt_template</code> directly, it overrides both to maintain legacy behavior.</p>
   </div>
 
   <h4>Expected Output Format</h4>

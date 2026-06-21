@@ -2,7 +2,7 @@ import json
 import logging
 import re
 from typing import Any, List, Optional
-from beliefstate.config import TrackerConfig
+from beliefstate.config import TrackerConfig, DEFAULT_EXTRACT_PROMPT
 from beliefstate.call import LLMCall
 from beliefstate.models import Belief
 from beliefstate.adapters.base import ProviderAdapter
@@ -453,7 +453,14 @@ class BeliefExtractor:
         self, chunk_text: str, turn: int, source: str
     ) -> List[Belief]:
         """Extract beliefs from a single chunk of text."""
-        prompt = self.config.extract_prompt_template.format(response=chunk_text)
+        if self.config.extract_prompt_template != DEFAULT_EXTRACT_PROMPT:
+            prompt_template = self.config.extract_prompt_template
+        elif source == "user":
+            prompt_template = self.config.extract_user_prompt_template
+        else:
+            prompt_template = self.config.extract_assistant_prompt_template
+
+        prompt = prompt_template.format(response=chunk_text)
 
         # We make an internal LLM call to extract beliefs
         call = LLMCall(messages=[{"role": "user", "content": prompt}])
