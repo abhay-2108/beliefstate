@@ -223,6 +223,133 @@ def _get_session_lock(session_id: str) -> asyncio.Lock:
     return _session_locks[session_id]
 
 
+class AsyncStreamWrapper:
+    """Wraps an async generator LLM response stream to accumulate text on-the-fly
+    without blocking downstream clients, and dispatches tracking upon exhaustion.
+    """
+
+    def __init__(
+        self,
+        stream_gen: Any,
+        tracker: "BeliefTracker",
+        args: tuple,
+        kwargs: dict,
+        session_id: str,
+        turn: int,
+    ):
+        self.stream_gen = stream_gen
+        self.tracker = tracker
+        self.args = args
+        self.kwargs = kwargs
+        self.session_id = session_id
+        self.turn = turn
+        self.accumulated_text = ""
+        self.first_chunk = None
+
+    def __aiter__(self) -> "AsyncStreamWrapper":
+        return self
+
+    async def __anext__(self) -> Any:
+        try:
+            chunk = await self.stream_gen.__anext__()
+        except StopAsyncIteration:
+            # Stream exhausted. Dispatch tracking asynchronously
+            await self._finalize_tracking()
+            raise StopAsyncIteration
+        except Exception as e:
+            raise e
+
+        if self.first_chunk is None:
+            self.first_chunk = chunk
+
+        # Extract chunk text
+        chunk_text = ""
+        if hasattr(chunk, "choices") and chunk.choices:
+            if hasattr(chunk.choices[0], "delta") and hasattr(
+                chunk.choices[0].delta, "content"
+            ):
+                chunk_text = chunk.choices[0].delta.content or ""
+        elif isinstance(chunk, dict):
+            if "choices" in chunk and chunk["choices"]:
+                choice = chunk["choices"][0]
+                if "delta" in choice and "content" in choice["delta"]:
+                    chunk_text = choice["delta"]["content"] or ""
+        elif hasattr(chunk, "content"):
+            chunk_text = chunk.content or ""
+        elif hasattr(chunk, "text"):
+            chunk_text = chunk.text or ""
+
+        self.accumulated_text += chunk_text
+        return chunk
+
+    async def _finalize_tracking(self) -> None:
+        try:
+            # Reconstruct response payload
+            if self.first_chunk is not None and hasattr(self.first_chunk, "choices"):
+                reconstructed = {
+                    "id": getattr(self.first_chunk, "id", "stream-accumulated"),
+                    "object": "chat.completion",
+                    "created": getattr(self.first_chunk, "created", 0),
+                    "model": getattr(self.first_chunk, "model", "unknown"),
+                    "choices": [
+                        {
+                            "index": 0,
+                            "message": {
+                                "role": "assistant",
+                                "content": self.accumulated_text,
+                            },
+                            "finish_reason": "stop",
+                        }
+                    ],
+                }
+            else:
+                reconstructed = {
+                    "content": self.accumulated_text,
+                    "text": self.accumulated_text,
+                }
+
+            # Auto-detect adapter if not set
+            if self.tracker._auto_detect_adapter and self.tracker.app_adapter is None:
+                logger.info("Auto-detecting adapter from streaming response chunk...")
+                self.tracker.app_adapter = _detect_adapter(reconstructed)
+
+                from beliefstate.resilience import ResilientAdapterWrapper
+
+                self.tracker.internal_adapter = ResilientAdapterWrapper(
+                    self.tracker.app_adapter, self.tracker.config
+                )
+                self.tracker._ensure_initialized()
+
+            llm_call = self.tracker.app_adapter.to_llm_call(*self.args, **self.kwargs)
+            llm_response = self.tracker.app_adapter.to_llm_response(reconstructed)
+
+            self.tracker._ensure_initialized()
+
+            provider_name = self.tracker.app_adapter.__class__.__name__
+            if self.session_id in self.tracker._session_providers:
+                if self.tracker._session_providers[self.session_id] != provider_name:
+                    logger.warning(
+                        f"Mid-session provider change for session "
+                        f"{self.session_id}: switched from "
+                        f"{self.tracker._session_providers[self.session_id]} to "
+                        f"{provider_name}. This may cause "
+                        f"embedding/extraction inconsistencies."
+                    )
+            else:
+                self.tracker._session_providers[self.session_id] = provider_name
+
+            if self.tracker.config.enable_background_tasks:
+                self.tracker.dispatcher.dispatch(
+                    self.tracker, llm_call, llm_response, self.session_id, self.turn
+                )
+            else:
+                await self.tracker._track_background(
+                    llm_call, llm_response, self.session_id, self.turn
+                )
+        except Exception as e:
+            logger.error(f"Tracker stream accumulation error: {e}", exc_info=True)
+
+
 class BeliefTracker:
     def __init__(
         self,
@@ -261,9 +388,23 @@ class BeliefTracker:
         # Initialize store based on config if not provided
         self.store: Store
         if store is None:
-            self.store = SQLiteStore(
-                db_path=self.config.store_kwargs.get("db_path", "beliefstate.db")
-            )
+            stype = self.config.store_type.lower()
+            if stype == "postgres":
+                from beliefstate.store.postgres import PostgreSQLStore
+
+                self.store = PostgreSQLStore(**self.config.store_kwargs)
+            elif stype == "redis":
+                from beliefstate.store.redis import RedisStore
+
+                if RedisStore is None:
+                    raise RuntimeError(
+                        "Redis SDK is not installed. Run `pip install redis`"
+                    )
+                self.store = RedisStore(**self.config.store_kwargs)
+            else:
+                self.store = SQLiteStore(
+                    db_path=self.config.store_kwargs.get("db_path", "beliefstate.db")
+                )
         else:
             self.store = store
 
@@ -346,6 +487,17 @@ class BeliefTracker:
 
     def _ensure_initialized(self) -> None:
         """Ensure extractor and detector are initialized (lazy init for auto-detect)."""
+        if self.internal_adapter is not None:
+            raw_adapter = getattr(
+                self.internal_adapter, "adapter", self.internal_adapter
+            )
+            if raw_adapter.__class__.__name__ == "GenericAdapter":
+                raise ValueError(
+                    "Auto-detected LLM provider adapter does not support belief extraction/generation. "
+                    "Please explicitly configure a generation-capable 'internal_provider' (e.g. OpenAIAdapter, LiteLLMAdapter) "
+                    "or pass an adapter explicitly to TrackerConfig."
+                )
+
         if self.extractor is None:
             if self.app_adapter is None:
                 raise RuntimeError(
@@ -1150,7 +1302,14 @@ class BeliefTracker:
 
             # Handle streaming: accumulate chunks into full response
             if stream:
-                native_response = await self._accumulate_stream(native_response)
+                return AsyncStreamWrapper(
+                    native_response,
+                    self,
+                    args,
+                    kwargs,
+                    session_id,
+                    current_turn,
+                )
 
             # 2. Auto-detect adapter on first call if needed
             if self._auto_detect_adapter and self.app_adapter is None:

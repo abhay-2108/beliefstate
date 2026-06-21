@@ -372,8 +372,15 @@ class BeliefExtractor:
     def __init__(self, adapter: ProviderAdapter, config: TrackerConfig):
         self.adapter = adapter
         self.config = config
-        # Try to extract model name and dimensionality from adapter
-        self.embedding_model = getattr(adapter, "embed_model", "")
+        self.embedding_adapter = (
+            config.embed_provider
+            if getattr(config, "embed_provider", None) is not None
+            else adapter
+        )
+        # Try to extract model name and dimensionality from adapter/config
+        self.embedding_model = getattr(config, "embed_model", None) or getattr(
+            self.embedding_adapter, "embed_model", ""
+        )
         self.embedding_dim = self._get_embedding_dim()
 
     def _get_embedding_dim(self) -> int:
@@ -397,8 +404,8 @@ class BeliefExtractor:
                 return dim
 
         # Fallback: query adapter if it supports dimension discovery
-        if hasattr(self.adapter, "embedding_dim"):
-            return int(self.adapter.embedding_dim)
+        if hasattr(self.embedding_adapter, "embedding_dim"):
+            return int(self.embedding_adapter.embedding_dim)
 
         return 0  # Unknown dimensionality
 
@@ -526,7 +533,9 @@ class BeliefExtractor:
                     texts_to_embed = [
                         f"{b.subject} {b.predicate} {b.value}" for b in temp_beliefs
                     ]
-                    embeddings = await self.adapter.get_embeddings(texts_to_embed)
+                    embeddings = await self.embedding_adapter.get_embeddings(
+                        texts_to_embed
+                    )
                     for b, emb in zip(temp_beliefs, embeddings):
                         b.embedding = emb
                         b.embedding_model = self.embedding_model
@@ -541,7 +550,7 @@ class BeliefExtractor:
                     for b in temp_beliefs:
                         try:
                             text_to_embed = f"{b.subject} {b.predicate} {b.value}"
-                            b.embedding = await self.adapter.get_embedding(
+                            b.embedding = await self.embedding_adapter.get_embedding(
                                 text_to_embed
                             )
                             b.embedding_model = self.embedding_model

@@ -79,6 +79,11 @@ try:
 except ImportError:
     InMemoryBeliefStore = None  # type: ignore[assignment,misc]
 
+try:
+    from beliefstate.store.postgres import PostgreSQLStore
+except ImportError:
+    PostgreSQLStore = None  # type: ignore[assignment,misc]
+
 # --- Framework Integrations (optional SDKs) ------------------------------------
 try:
     from beliefstate.integrations.fastapi import (
@@ -132,6 +137,7 @@ __all__ = [
     "Store",
     "SQLiteStore",
     "RedisStore",
+    "PostgreSQLStore",
     "InMemoryBeliefStore",
     "ProviderAdapter",
     "BeliefExtractor",

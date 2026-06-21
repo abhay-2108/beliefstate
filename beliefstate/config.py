@@ -270,6 +270,12 @@ class TrackerConfig(BaseModel):
     internal_provider: Optional[Any] = Field(
         default=None, description="Explicit provider for tracker's internal LLM calls."
     )
+    embed_provider: Optional[Any] = Field(
+        default=None, description="Explicit provider for embedding generation."
+    )
+    embed_model: Optional[str] = Field(
+        default=None, description="Model name to use for embeddings."
+    )
 
     # Resilience settings
     retry_max_attempts: int = Field(

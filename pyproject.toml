@@ -53,6 +53,9 @@ local = [
 redis = [
     "redis>=5.0.0",
 ]
+postgres = [
+    "asyncpg>=0.28.0",
+]
 langchain = [
     "langchain-core>=0.2.0",
 ]
