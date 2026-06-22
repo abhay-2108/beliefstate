@@ -17,7 +17,7 @@
 <!-- ═══════════════ SIDEBAR ═══════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo">🧠 BeliefState</div>
+    <div class="sidebar-logo">BeliefState</div>
     <div class="sidebar-version">v1.0.2</div>
   </div>
   <nav>
@@ -67,7 +67,7 @@
   </nav>
 </aside>
 
-<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar">◀</button>
+<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar"></button>
 
 <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
 <main class="main-content">
@@ -83,10 +83,10 @@
   <table class="param-table">
     <thead><tr><th>Dispatcher</th><th>Durability</th><th>Setup</th><th>Best For</th></tr></thead>
     <tbody>
-      <tr><td><code>asyncio</code></td><td>❌ Lost on crash</td><td>Zero — built-in</td><td>Default. Single-process apps, development, low-stakes tracking.</td></tr>
-      <tr><td><code>sync</code></td><td>✅ Inline (blocking)</td><td>Zero — built-in</td><td>Debugging, unit testing, synchronous applications.</td></tr>
-      <tr><td><code>celery</code></td><td>✅ Persisted in broker</td><td>Redis/RabbitMQ + workers</td><td>Production. Task retry, monitoring (Flower), multi-worker.</td></tr>
-      <tr><td><code>rq</code></td><td>✅ Persisted in Redis</td><td>Redis + workers</td><td>Simpler alternative to Celery. Fewer features, easier setup.</td></tr>
+      <tr><td><code>asyncio</code></td><td><span class="badge yellow">None</span> Lost on crash</td><td>Zero — built-in</td><td>Default. Single-process apps, development, low-stakes tracking.</td></tr>
+      <tr><td><code>sync</code></td><td><span class="badge green">Yes</span> Inline (blocking)</td><td>Zero — built-in</td><td>Debugging, unit testing, synchronous applications.</td></tr>
+      <tr><td><code>celery</code></td><td><span class="badge green">Yes</span> Persisted in broker</td><td>Redis/RabbitMQ + workers</td><td>Production. Task retry, monitoring (Flower), multi-worker.</td></tr>
+      <tr><td><code>rq</code></td><td><span class="badge green">Yes</span> Persisted in Redis</td><td>Redis + workers</td><td>Simpler alternative to Celery. Fewer features, easier setup.</td></tr>
     </tbody>
   </table>
 
@@ -140,7 +140,7 @@ tracker = <span class="fn">BeliefTracker</span>(
 <span class="cm"># Register BEFORE processing any tasks</span>
 <span class="fn">register_global_tracker</span>(tracker)</code></pre>
   <div class="callout warning">
-    <p><strong>⚠️ Context Propagation:</strong> <code>ContextVar</code> (<code>session_context</code>) does NOT propagate across process boundaries. The dispatchers explicitly serialize <code>session_id</code> into task payloads to ensure it reaches worker processes correctly.</p>
+    <p><strong>Context Propagation:</strong> <code>ContextVar</code> (<code>session_context</code>) does NOT propagate across process boundaries. The dispatchers explicitly serialize <code>session_id</code> into task payloads to ensure it reaches worker processes correctly.</p>
   </div>
 </section>
 
@@ -171,7 +171,7 @@ except CircuitBreakerOpenException:
     <span class="nb">print</span>(<span class="st">"Circuit breaker is OPEN — failing fast"</span>)</code></pre>
 
   <div class="callout tip">
-    <p><strong>ℹ️ Circuit Breaker State Machine:</strong>
+    <p><strong>Circuit Breaker State Machine:</strong>
     <ul>
       <li><strong>CLOSED</strong> (Normal): All requests flow through. If consecutive failures exceed <code>circuit_breaker_failure_threshold</code> (default 5), the circuit trips to OPEN.</li>
       <li><strong>OPEN</strong> (Tripped): All requests immediately raise <code>CircuitBreakerOpenException</code> without hitting the LLM provider, saving rate limits and latency.</li>
@@ -304,7 +304,7 @@ receipt = <span class="kw">await</span> tracker.<span class="fn">clear_session</
   </table>
 
   <div class="callout warning">
-    <p><strong>⚠️ Concurrency &amp; Deletion Race Conditions:</strong> If a user requests account deletion while background belief extraction tasks are still running in the asyncio event loop, those tasks could complete and write new facts <em>after</em> the database is cleared.
+    <p><strong>Concurrency &amp; Deletion Race Conditions:</strong> If a user requests account deletion while background belief extraction tasks are still running in the asyncio event loop, those tasks could complete and write new facts <em>after</em> the database is cleared.
     To prevent this, <code>clear_session()</code> calls the dispatcher's <code>drain_session(session_id)</code> method first, which cancels or waits for all active tracking tasks for that session ID before executing the SQL or Redis delete commands.
     </p>
   </div>
@@ -328,7 +328,7 @@ receipt = <span class="kw">await</span> tracker.<span class="fn">clear_session</
 <!-- ── Footer ── -->
 <footer class="site-footer">
   <p>
-    Built with ❤️ · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a> · MIT License
+    MIT Licensed · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a>
   </p>
 </footer>
 
@@ -352,8 +352,8 @@ receipt = <span class="kw">await</span> tracker.<span class="fn">clear_session</
   window.addEventListener('hashchange', highlightCurrentLink);
   navLinks.forEach(link => { link.addEventListener('click', () => { const sidebar = document.querySelector('.sidebar'); if (sidebar) sidebar.classList.remove('open'); }); });
   const sidebarToggle = document.getElementById('sidebar-toggle');
-  if (localStorage.getItem('sidebar-collapsed') === 'true') { document.body.classList.add('sidebar-collapsed'); if (sidebarToggle) sidebarToggle.textContent = '▶'; } else { document.body.classList.remove('sidebar-collapsed'); if (sidebarToggle) sidebarToggle.textContent = '◀'; }
-  if (sidebarToggle) { sidebarToggle.addEventListener('click', () => { const isCollapsed = document.body.classList.toggle('sidebar-collapsed'); localStorage.setItem('sidebar-collapsed', isCollapsed); sidebarToggle.textContent = isCollapsed ? '▶' : '◀'; }); }
+  if (localStorage.getItem('sidebar-collapsed') === 'true') { document.body.classList.add('sidebar-collapsed'); } else { document.body.classList.remove('sidebar-collapsed'); }
+  if (sidebarToggle) { sidebarToggle.addEventListener('click', () => { const isCollapsed = document.body.classList.toggle('sidebar-collapsed'); localStorage.setItem('sidebar-collapsed', isCollapsed); }); }
 </script>
 
 </body>

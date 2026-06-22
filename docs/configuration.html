@@ -17,7 +17,7 @@
 <!-- ═══════════════ SIDEBAR ═══════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo">🧠 BeliefState</div>
+    <div class="sidebar-logo">BeliefState</div>
     <div class="sidebar-version">v1.0.2</div>
   </div>
   <nav>
@@ -67,7 +67,7 @@
   </nav>
 </aside>
 
-<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar">◀</button>
+<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar"></button>
 
 <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
 <main class="main-content">
@@ -192,7 +192,7 @@ config = <span class="fn">TrackerConfig</span>(
   </table>
 
   <div class="callout warning">
-    <p><strong>⚠️ Auto-detection Fail-Fast:</strong> If the tracker auto-detects an unrecognized LLM response type at runtime, it falls back to <code>GenericAdapter</code>. Since this generic fallback cannot perform extraction or generate embeddings, the tracker now immediately throws a <code>ValueError</code> upon initialization to prevent silent background failures.</p>
+    <p><strong>Auto-detection Fail-Fast:</strong> If the tracker auto-detects an unrecognized LLM response type at runtime, it falls back to <code>GenericAdapter</code>. Since this generic fallback cannot perform extraction or generate embeddings, the tracker now immediately throws a <code>ValueError</code> upon initialization to prevent silent background failures.</p>
   </div>
 
   <!-- ── Belief Storage & Injection ── -->
@@ -227,7 +227,7 @@ config = <span class="fn">TrackerConfig</span>(
   </table>
 
   <div class="callout info">
-    <p><strong>ℹ️ Pruning vs. Staleness:</strong> TTL pruning (<code>enable_belief_ttl</code>) <strong>permanently deletes</strong> old beliefs from the store. Staleness scoring (<code>enable_staleness_scoring</code>) only <strong>hides</strong> old beliefs from prompt injection — they remain in the store and can be queried. Use TTL for data hygiene; use staleness for prompt relevance.</p>
+    <p><strong>Pruning vs. Staleness:</strong> TTL pruning (<code>enable_belief_ttl</code>) <strong>permanently deletes</strong> old beliefs from the store. Staleness scoring (<code>enable_staleness_scoring</code>) only <strong>hides</strong> old beliefs from prompt injection — they remain in the store and can be queried. Use TTL for data hygiene; use staleness for prompt relevance.</p>
   </div>
 
   <!-- ── Staleness Scoring ── -->
@@ -247,9 +247,9 @@ config = <span class="fn">TrackerConfig</span>(
   <pre><code>Staleness Score = Confidence / (Days Since Last Referenced + 1)</code></pre>
   <p>Examples:</p>
   <ul>
-    <li>A belief with confidence 1.0, referenced today → Score = <code>1.0 / (0 + 1)</code> = <strong>1.0</strong> ✅ (included)</li>
-    <li>A belief with confidence 0.8, referenced 3 days ago → Score = <code>0.8 / (3 + 1)</code> = <strong>0.2</strong> ✅ (included)</li>
-    <li>A belief with confidence 0.5, referenced 10 days ago → Score = <code>0.5 / (10 + 1)</code> = <strong>0.045</strong> ❌ (excluded, below 0.1)</li>
+    <li>A belief with confidence 1.0, referenced today → Score = <code>1.0 / (0 + 1)</code> = <strong>1.0</strong> <span class="badge green">Included</span></li>
+    <li>A belief with confidence 0.8, referenced 3 days ago → Score = <code>0.8 / (3 + 1)</code> = <strong>0.2</strong> <span class="badge green">Included</span></li>
+    <li>A belief with confidence 0.5, referenced 10 days ago → Score = <code>0.5 / (10 + 1)</code> = <strong>0.045</strong> <span class="badge yellow">Excluded</span> (below 0.1)</li>
   </ul>
 
   <!-- ── Token-Aware Injection ── -->
@@ -298,7 +298,7 @@ config = <span class="fn">TrackerConfig</span>(
 )</code></pre>
 
   <div class="callout info">
-    <p><strong>ℹ️ Prompt Routing & Pronoun Mapping Bias:</strong> By default, BeliefState automatically routes user inputs to <code>extract_user_prompt_template</code> and assistant responses to <code>extract_assistant_prompt_template</code>. This ensures that first-person pronouns ("I", "my") are mapped correctly to "USER" or "ASSISTANT" respectively. If you customize <code>extract_prompt_template</code> directly, it overrides both to maintain legacy behavior.</p>
+    <p><strong>Prompt Routing &amp; Pronoun Mapping Bias:</strong> By default, BeliefState automatically routes user inputs to <code>extract_user_prompt_template</code> and assistant responses to <code>extract_assistant_prompt_template</code>. This ensures that first-person pronouns ("I", "my") are mapped correctly to "USER" or "ASSISTANT" respectively. If you customize <code>extract_prompt_template</code> directly, it overrides both to maintain legacy behavior.</p>
   </div>
 
   <h4>Expected Output Format</h4>
@@ -334,7 +334,7 @@ Return {"relationship": "contradiction|entailment|neutral", "score": 0.0-1.0}"""
 )</code></pre>
 
   <div class="callout info">
-    <p><strong>ℹ️ Required placeholders:</strong> <code>{premise}</code> — The existing stored belief. <code>{hypothesis}</code> — The new belief being evaluated. The model must return a JSON object with <code>relationship</code> and <code>score</code> keys.</p>
+    <p><strong>Required placeholders:</strong> <code>{premise}</code> — The existing stored belief. <code>{hypothesis}</code> — The new belief being evaluated. The model must return a JSON object with <code>relationship</code> and <code>score</code> keys.</p>
   </div>
 
   <h3>Tips for Writing Custom Prompts</h3>
@@ -349,7 +349,7 @@ Return {"relationship": "contradiction|entailment|neutral", "score": 0.0-1.0}"""
 <!-- ── Footer ── -->
 <footer class="site-footer">
   <p>
-    Built with ❤️ · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a> · MIT License
+    MIT Licensed · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a>
   </p>
 </footer>
 
@@ -425,17 +425,14 @@ Return {"relationship": "contradiction|entailment|neutral", "score": 0.0-1.0}"""
   // On load, restore state
   if (localStorage.getItem('sidebar-collapsed') === 'true') {
     document.body.classList.add('sidebar-collapsed');
-    if (sidebarToggle) sidebarToggle.textContent = '▶';
   } else {
     document.body.classList.remove('sidebar-collapsed');
-    if (sidebarToggle) sidebarToggle.textContent = '◀';
   }
 
   if (sidebarToggle) {
     sidebarToggle.addEventListener('click', () => {
       const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
       localStorage.setItem('sidebar-collapsed', isCollapsed);
-      sidebarToggle.textContent = isCollapsed ? '▶' : '◀';
     });
   }
 </script>

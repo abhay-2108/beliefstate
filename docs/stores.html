@@ -17,7 +17,7 @@
 <!-- ═══════════════ SIDEBAR ═══════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo">🧠 BeliefState</div>
+    <div class="sidebar-logo">BeliefState</div>
     <div class="sidebar-version">v1.0.2</div>
   </div>
   <nav>
@@ -67,7 +67,7 @@
   </nav>
 </aside>
 
-<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar">◀</button>
+<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar"></button>
 
 <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
 <main class="main-content">
@@ -83,10 +83,10 @@
   <table class="param-table">
     <thead><tr><th>Store</th><th>Persistence</th><th>Multi-Worker</th><th>Best For</th><th>Setup</th></tr></thead>
     <tbody>
-      <tr><td><strong>SQLite</strong></td><td>✅ Disk file</td><td>❌ Single process</td><td>Local dev, prototyping, single-server apps</td><td>Zero — included with Python</td></tr>
-      <tr><td><strong>PostgreSQL</strong></td><td>✅ Postgres DB</td><td>✅ Distributed</td><td>Multi-worker cloud databases, RDS, Supabase</td><td>Requires Postgres (using asyncpg)</td></tr>
-      <tr><td><strong>Redis</strong></td><td>✅ Redis server</td><td>✅ Distributed</td><td>Production, multi-worker, load-balanced</td><td>Requires Redis server</td></tr>
-      <tr><td><strong>In-Memory</strong></td><td>❌ Lost on restart</td><td>❌ Single process</td><td>Unit testing, ephemeral sessions</td><td>Zero — pure Python</td></tr>
+      <tr><td><strong>SQLite</strong></td><td><span class="badge green">Yes</span> Disk file</td><td><span class="badge yellow">No</span> Single process</td><td>Local dev, prototyping, single-server apps</td><td>Zero — included with Python</td></tr>
+      <tr><td><strong>PostgreSQL</strong></td><td><span class="badge green">Yes</span> Postgres DB</td><td><span class="badge green">Yes</span> Distributed</td><td>Multi-worker cloud databases, RDS, Supabase</td><td>Requires Postgres (using asyncpg)</td></tr>
+      <tr><td><strong>Redis</strong></td><td><span class="badge green">Yes</span> Redis server</td><td><span class="badge green">Yes</span> Distributed</td><td>Production, multi-worker, load-balanced</td><td>Requires Redis server</td></tr>
+      <tr><td><strong>In-Memory</strong></td><td><span class="badge yellow">No</span> Lost on restart</td><td><span class="badge yellow">No</span> Single process</td><td>Unit testing, ephemeral sessions</td><td>Zero — pure Python</td></tr>
     </tbody>
   </table>
 
@@ -137,7 +137,7 @@ tracker = <span class="fn">BeliefTracker</span>(config=config, store=store)
 store = <span class="fn">SQLiteStore</span>(db_path=<span class="st">":memory:"</span>)</code></pre>
 
   <div class="callout tip">
-    <p><strong>ℹ️ Database Schema &amp; WAL Mode:</strong> The database creates a schema optimized for session isolation and turn order:
+    <p><strong>Database Schema &amp; WAL Mode:</strong> The database creates a schema optimized for session isolation and turn order:
     <pre><code>CREATE TABLE IF NOT EXISTS beliefs (
     session_id TEXT,
     subject TEXT,
@@ -195,13 +195,30 @@ tracker = <span class="fn">BeliefTracker</span>(config=config, adapter=adapter)
 </code></pre>
 
   <div class="callout info">
-    <p><strong>ℹ️ Cosine Similarity & PL/pgSQL Function:</strong> During database initialization, PostgreSQLStore:
-    <ul>
-      <li>Creates the <code>beliefs</code> table and corresponding indexes optimized for sessions and timestamps.</li>
-      <li>Creates a pure PL/pgSQL function <code>cosine_similarity(double precision[], double precision[])</code>.</li>
-      <li>Calculates vector similarity directly in SQL queries, avoiding the overhead of loading embeddings into Python memory or requiring pgvector.</li>
-    </ul>
-    </p>
+    <p><strong>Cosine Similarity and Custom DDL Setup:</strong> During database initialization, PostgreSQLStore automatically attempts to run the DDL commands to create the <code>beliefs</code> table, its indexes, and the PL/pgSQL <code>cosine_similarity</code> function.</p>
+    <p>If your database user in production does not have DDL privileges (e.g. strict security policies on AWS RDS or Supabase), a database administrator should execute the following SQL script manually beforehand:</p>
+    <pre><code><span class="code-label">sql</span>CREATE OR REPLACE FUNCTION cosine_similarity(a double precision[], b double precision[])
+RETURNS double precision AS $$
+DECLARE
+    dot double precision := 0;
+    mag_a double precision := 0;
+    mag_b double precision := 0;
+    i integer;
+BEGIN
+    IF a IS NULL OR b IS NULL OR cardinality(a) = 0 OR cardinality(b) = 0 OR cardinality(a) &lt;&gt; cardinality(b) THEN
+        RETURN 0.0;
+    END IF;
+    FOR i IN 1..cardinality(a) LOOP
+        dot := dot + a[i] * b[i];
+        mag_a := mag_a + a[i] * a[i];
+        mag_b := mag_b + b[i] * b[i];
+    END LOOP;
+    IF mag_a = 0 OR mag_b = 0 THEN
+        RETURN 0.0;
+    END IF;
+    RETURN dot / (sqrt(mag_a) * sqrt(mag_b));
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;</code></pre>
   </div>
 </section>
 
@@ -226,7 +243,7 @@ store = <span class="fn">RedisStore</span>(redis_url=<span class="st">"redis://l
 <span class="kw">await</span> store.<span class="fn">set_session_ttl</span>(<span class="st">"user_123"</span>, ttl_seconds=<span class="nu">86400</span>)</code></pre>
 
   <div class="callout tip">
-    <p><strong>ℹ️ Redis Hash Layout &amp; Session Expiry:</strong> Data is organized cleanly to prevent key namespace bloat:
+    <p><strong>Redis Hash Layout &amp; Session Expiry:</strong> Data is organized cleanly to prevent key namespace bloat:
     <ul>
       <li>Each session is stored as a single Redis <strong>HASH</strong> at key <code>beliefstate:session:{session_id}</code>.</li>
       <li>Each belief within the hash uses <code>subject::predicate</code> as the hash field and the serialized belief JSON as the value.</li>
@@ -268,7 +285,7 @@ stats = store.<span class="fn">get_stats</span>()
 <span class="nb">print</span>(stats)  <span class="cm"># {"total_sessions": 5, "total_beliefs": 142, "utilization_percent": 12.3}</span></code></pre>
 
   <div class="callout tip">
-    <p><strong>ℹ️ LRU Eviction &amp; Footprint Estimation:</strong> The in-memory store uses a Python <code>collections.OrderedDict</code>:
+    <p><strong>LRU Eviction &amp; Footprint Estimation:</strong> The in-memory store uses a Python <code>collections.OrderedDict</code>:
     <ol>
       <li><strong>Usage tracking:</strong> Reading or writing a belief updates its usage rank, moving the key to the end of the dictionary (MRU position).</li>
       <li><strong>Memory estimation:</strong> Each belief's memory footprint is estimated by checking the byte length of its JSON string representation (<code>len(belief.model_dump_json())</code>).</li>
@@ -278,7 +295,7 @@ stats = store.<span class="fn">get_stats</span>()
   </div>
 
   <div class="callout warning">
-    <p><strong>⚠️ Not Durable:</strong> In-memory store is NOT persistent. All beliefs are lost on process restart or crash. Use SQLite or Redis for any application that needs belief persistence.</p>
+    <p><strong>Not Durable:</strong> In-memory store is NOT persistent. All beliefs are lost on process restart or crash. Use SQLite or Redis for any application that needs belief persistence.</p>
   </div>
 
   <h3>Implementing a Custom Store</h3>
@@ -299,7 +316,7 @@ tracker = <span class="fn">BeliefTracker</span>(config=config, store=<span class
 <!-- ── Footer ── -->
 <footer class="site-footer">
   <p>
-    Built with ❤️ · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a> · MIT License
+    MIT Licensed · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a>
   </p>
 </footer>
 
@@ -323,8 +340,8 @@ tracker = <span class="fn">BeliefTracker</span>(config=config, store=<span class
   window.addEventListener('hashchange', highlightCurrentLink);
   navLinks.forEach(link => { link.addEventListener('click', () => { const sidebar = document.querySelector('.sidebar'); if (sidebar) sidebar.classList.remove('open'); }); });
   const sidebarToggle = document.getElementById('sidebar-toggle');
-  if (localStorage.getItem('sidebar-collapsed') === 'true') { document.body.classList.add('sidebar-collapsed'); if (sidebarToggle) sidebarToggle.textContent = '▶'; } else { document.body.classList.remove('sidebar-collapsed'); if (sidebarToggle) sidebarToggle.textContent = '◀'; }
-  if (sidebarToggle) { sidebarToggle.addEventListener('click', () => { const isCollapsed = document.body.classList.toggle('sidebar-collapsed'); localStorage.setItem('sidebar-collapsed', isCollapsed); sidebarToggle.textContent = isCollapsed ? '▶' : '◀'; }); }
+  if (localStorage.getItem('sidebar-collapsed') === 'true') { document.body.classList.add('sidebar-collapsed'); } else { document.body.classList.remove('sidebar-collapsed'); }
+  if (sidebarToggle) { sidebarToggle.addEventListener('click', () => { const isCollapsed = document.body.classList.toggle('sidebar-collapsed'); localStorage.setItem('sidebar-collapsed', isCollapsed); }); }
 </script>
 
 </body>

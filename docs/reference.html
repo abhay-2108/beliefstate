@@ -17,7 +17,7 @@
 <!-- ═══════════════ SIDEBAR ═══════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo">🧠 BeliefState</div>
+    <div class="sidebar-logo">BeliefState</div>
     <div class="sidebar-version">v1.0.2</div>
   </div>
   <nav>
@@ -67,7 +67,7 @@
   </nav>
 </aside>
 
-<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar">◀</button>
+<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar"></button>
 
 <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
 <main class="main-content">
@@ -162,9 +162,9 @@
       <tr><td><code>subject</code></td><td><code>str</code></td><td><em>(required)</em></td><td>Who or what the belief is about. Normalized: first-person → <code>"USER"</code>, second-person → <code>"ASSISTANT"</code>.</td></tr>
       <tr><td><code>predicate</code></td><td><code>str</code></td><td><em>(required)</em></td><td>The relationship or attribute (e.g., <code>"lives in"</code>, <code>"likes"</code>, <code>"works at"</code>).</td></tr>
       <tr><td><code>value</code></td><td><code>str</code></td><td><em>(required)</em></td><td>The value of the claim. Normalized: dates → ISO 8601, currency → ISO 4217, numbers → digits.</td></tr>
-      <tr><td><code>confidence</code></td><td><code>float</code></td><td><code>1.0</code></td><td>Extraction confidence from 0.0 (uncertain) to 1.0 (definitive). Reported by the extraction model.</td></tr>
-      <tr><td><code>turn</code></td><td><code>int</code></td><td><code>0</code></td><td>The conversation turn number when this belief was extracted.</td></tr>
-      <tr><td><code>source</code></td><td><code>str</code></td><td><code>"user"</code></td><td>Who made the claim: <code>"user"</code> (from user messages) or <code>"assistant"</code> (from LLM responses).</td></tr>
+      <tr><td><code>confidence</code></td><td><code>float</code></td><td><em>(required)</em></td><td>Extraction confidence from 0.0 (uncertain) to 1.0 (definitive). Reported by the extraction model.</td></tr>
+      <tr><td><code>turn</code></td><td><code>int</code></td><td><em>(required)</em></td><td>The conversation turn number when this belief was extracted.</td></tr>
+      <tr><td><code>source</code></td><td><code>str</code></td><td><em>(required)</em></td><td>Who made the claim: <code>"user"</code> (from user messages) or <code>"assistant"</code> (from LLM responses).</td></tr>
       <tr><td><code>belief_type</code></td><td><code>str</code></td><td><code>"assertion"</code></td><td><code>"assertion"</code> — a normal factual claim. <code>"update"</code> — an explicit correction of a prior belief (triggers immediate override).</td></tr>
       <tr><td><code>is_hypothetical</code></td><td><code>bool</code></td><td><code>False</code></td><td>Whether the belief is conditional or speculative (e.g., "If I were…"). Hypothetical beliefs are excluded from prompt injection but kept in the store.</td></tr>
       <tr><td><code>embedding</code></td><td><code>Optional[list[float]]</code></td><td><code>None</code></td><td>Vector embedding of the belief text (<code>"{subject} {predicate} {value}"</code>). Used for semantic similarity search in contradiction detection.</td></tr>
@@ -233,7 +233,7 @@
     <li><strong>Fixed session lock memory leak:</strong> <code>_session_locks</code> dict grew unboundedly — every new session created a lock that was never removed. <code>clear_session()</code> now cleans up locks, turn counters, and provider tracking entries.</li>
   </ul>
 
-  <h4>✨ New Features</h4>
+  <h4>New Features</h4>
   <ul>
     <li><strong><code>async with</code> context manager:</strong> <code>BeliefTracker</code> now supports <code>async with tracker:</code> pattern for automatic store open/close lifecycle management.</li>
     <li><strong><code>belief_count()</code>:</strong> New Store protocol method to count beliefs without deserializing them all into memory. Uses <code>SELECT COUNT(*)</code> (SQLite), <code>HLEN</code> (Redis), <code>len()</code> (Memory).</li>
@@ -243,7 +243,7 @@
     <li><strong><code>get_session_turn()</code>:</strong> New method to query the turn counter for a specific session (replaces the deprecated global <code>turn_counter</code> attribute).</li>
   </ul>
 
-  <h4>📦 Infrastructure</h4>
+  <h4>Infrastructure</h4>
   <ul>
     <li>Published to PyPI via GitHub Actions (Trusted Publisher)</li>
     <li>Added <code>ruff</code> formatting checks to CI</li>
@@ -273,7 +273,7 @@
 <!-- ── Footer ── -->
 <footer class="site-footer">
   <p>
-    Built with ❤️ · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a> · MIT License
+    MIT Licensed · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a>
   </p>
 </footer>
 
@@ -297,8 +297,8 @@
   window.addEventListener('hashchange', highlightCurrentLink);
   navLinks.forEach(link => { link.addEventListener('click', () => { const sidebar = document.querySelector('.sidebar'); if (sidebar) sidebar.classList.remove('open'); }); });
   const sidebarToggle = document.getElementById('sidebar-toggle');
-  if (localStorage.getItem('sidebar-collapsed') === 'true') { document.body.classList.add('sidebar-collapsed'); if (sidebarToggle) sidebarToggle.textContent = '▶'; } else { document.body.classList.remove('sidebar-collapsed'); if (sidebarToggle) sidebarToggle.textContent = '◀'; }
-  if (sidebarToggle) { sidebarToggle.addEventListener('click', () => { const isCollapsed = document.body.classList.toggle('sidebar-collapsed'); localStorage.setItem('sidebar-collapsed', isCollapsed); sidebarToggle.textContent = isCollapsed ? '▶' : '◀'; }); }
+  if (localStorage.getItem('sidebar-collapsed') === 'true') { document.body.classList.add('sidebar-collapsed'); } else { document.body.classList.remove('sidebar-collapsed'); }
+  if (sidebarToggle) { sidebarToggle.addEventListener('click', () => { const isCollapsed = document.body.classList.toggle('sidebar-collapsed'); localStorage.setItem('sidebar-collapsed', isCollapsed); }); }
 </script>
 
 </body>

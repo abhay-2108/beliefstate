@@ -17,7 +17,7 @@
 <!-- ═══════════════ SIDEBAR ═══════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo">🧠 BeliefState</div>
+    <div class="sidebar-logo">BeliefState</div>
     <div class="sidebar-version">v1.0.2</div>
   </div>
   <nav>
@@ -67,7 +67,7 @@
   </nav>
 </aside>
 
-<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar">◀</button>
+<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar"></button>
 
 <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
 <main class="main-content">
@@ -108,8 +108,7 @@ app.<span class="fn">add_middleware</span>(
     <span class="kw">return</span> {<span class="st">"response"</span>: response}</code></pre>
 
   <div class="callout tip">
-    <p><strong>ℹ️ Context Propagation Mechanics:</strong> Web frameworks process multiple requests concurrently on different asynchronous task contexts. BeliefState uses Python's standard <code>contextvars.ContextVar</code> (<code>session_context</code>) to store and isolate session identifiers.
-    When a request comes in:
+    <p><strong>Context Propagation Mechanics:</strong> Web frameworks process multiple requests concurrently on different asynchronous task contexts. BeliefState uses Python's standard <code>contextvars.ContextVar</code> (<code>session_context</code>) to store and isolate session identifiers.
     <ol>
       <li>The ASGI middleware intercepts the request headers and extracts the session key.</li>
       <li>It sets the value via <code>token = session_context.set(session_id)</code>, propagating the variable down the active execution flow.</li>
@@ -162,7 +161,7 @@ app.wsgi_app = <span class="fn">FlaskBeliefTrackerMiddleware</span>(app.wsgi_app
 <span class="fn">register_flask_hooks</span>(app, header_name=<span class="st">"X-Session-ID"</span>)</code></pre>
 
   <div class="callout info">
-    <p><strong>ℹ️ Middleware vs. Hooks:</strong> The WSGI middleware intercepts requests at the WSGI layer (before Flask processes them), while hooks use Flask's <code>before_request</code> / <code>teardown_request</code> lifecycle. Either approach works — the middleware is recommended for consistency with other frameworks.</p>
+    <p><strong>Middleware vs. Hooks:</strong> The WSGI middleware intercepts requests at the WSGI layer (before Flask processes them), while hooks use Flask's <code>before_request</code> / <code>teardown_request</code> lifecycle. Either approach works — the middleware is recommended for consistency with other frameworks.</p>
   </div>
 </section>
 
@@ -185,7 +184,7 @@ app.wsgi_app = <span class="fn">FlaskBeliefTrackerMiddleware</span>(app.wsgi_app
 
 app = <span class="fn">Starlette</span>()
 app.<span class="fn">add_middleware</span>(BeliefTrackerASGIMiddleware, header_name=<span class="st">"X-Session-ID"</span>)
-<span class="cm"># Works with any ASGI framework: Starlette, Litestar, Quart, etc.</span></code></pre>
+<!-- Works with any ASGI framework: Starlette, Litestar, Quart, etc. --></code></pre>
 </section>
 
 <!-- ── LangChain ── -->
@@ -203,15 +202,15 @@ app.<span class="fn">add_middleware</span>(BeliefTrackerASGIMiddleware, header_n
 
   <pre><code><span class="code-label">python</span><span class="kw">from</span> beliefstate <span class="kw">import</span> session_context, BeliefTrackerLangchainCallback
 
-<span class="cm"># Set session context before invoking the chain</span>
+# Set session context before invoking the chain
 session_context.<span class="fn">set</span>(<span class="st">"user_123"</span>)
 
-<span class="cm"># Attach callback handler to your chain</span>
+# Attach callback handler to your chain
 handler = <span class="fn">BeliefTrackerLangchainCallback</span>(tracker=tracker)
-<span class="kw">await</span> llm.<span class="fn">ainvoke</span>(<span class="st">"Hello!"</span>, config={<span class="st">"callbacks"</span>: [handler]})</code></pre>
+await llm.<span class="fn">ainvoke</span>(<span class="st">"Hello!"</span>, config={<span class="st">"callbacks"</span>: [handler]})</code></pre>
 
   <div class="callout info">
-    <p><strong>ℹ️ Important:</strong> You must set <code>session_context</code> before invoking the chain, since LangChain callbacks don't have access to HTTP headers. Use <code>session_context.set("user_123")</code> or wrap calls inside a middleware that sets the context.</p>
+    <p><strong>Important:</strong> You must set <code>session_context</code> before invoking the chain, since LangChain callbacks don't have access to HTTP headers. Use <code>session_context.set("user_123")</code> or wrap calls inside a middleware that sets the context.</p>
   </div>
 </section>
 
@@ -268,7 +267,7 @@ asyncio.<span class="fn">create_task</span>(
 )</code></pre>
 
   <div class="callout tip">
-    <p><strong>ℹ️ Callback Hook Lifecycles:</strong> The LangChain and LlamaIndex callback handlers inherit from their respective framework lifecycle hooks (e.g. <code>on_llm_end</code> or <code>on_event_end</code>).
+    <p><strong>Callback Hook Lifecycles:</strong> The LangChain and LlamaIndex callback handlers inherit from their respective framework lifecycle hooks (e.g. <code>on_llm_end</code> or <code>on_event_end</code>).
     When the model finishes generating a response:
     <ol>
       <li>The callback intercepts the output response text and input prompt history.</li>
@@ -285,7 +284,7 @@ asyncio.<span class="fn">create_task</span>(
 <!-- ── Footer ── -->
 <footer class="site-footer">
   <p>
-    Built with ❤️ · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a> · MIT License
+    MIT Licensed · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a>
   </p>
 </footer>
 
@@ -309,8 +308,8 @@ asyncio.<span class="fn">create_task</span>(
   window.addEventListener('hashchange', highlightCurrentLink);
   navLinks.forEach(link => { link.addEventListener('click', () => { const sidebar = document.querySelector('.sidebar'); if (sidebar) sidebar.classList.remove('open'); }); });
   const sidebarToggle = document.getElementById('sidebar-toggle');
-  if (localStorage.getItem('sidebar-collapsed') === 'true') { document.body.classList.add('sidebar-collapsed'); if (sidebarToggle) sidebarToggle.textContent = '▶'; } else { document.body.classList.remove('sidebar-collapsed'); if (sidebarToggle) sidebarToggle.textContent = '◀'; }
-  if (sidebarToggle) { sidebarToggle.addEventListener('click', () => { const isCollapsed = document.body.classList.toggle('sidebar-collapsed'); localStorage.setItem('sidebar-collapsed', isCollapsed); sidebarToggle.textContent = isCollapsed ? '▶' : '◀'; }); }
+  if (localStorage.getItem('sidebar-collapsed') === 'true') { document.body.classList.add('sidebar-collapsed'); } else { document.body.classList.remove('sidebar-collapsed'); }
+  if (sidebarToggle) { sidebarToggle.addEventListener('click', () => { const isCollapsed = document.body.classList.toggle('sidebar-collapsed'); localStorage.setItem('sidebar-collapsed', isCollapsed); }); }
 </script>
 
 </body>

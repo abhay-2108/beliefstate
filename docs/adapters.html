@@ -17,7 +17,7 @@
 <!-- ═══════════════ SIDEBAR ═══════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo">🧠 BeliefState</div>
+    <div class="sidebar-logo">BeliefState</div>
     <div class="sidebar-version">v1.0.2</div>
   </div>
   <nav>
@@ -68,7 +68,7 @@
   </nav>
 </aside>
 
-<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar">◀</button>
+<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar"></button>
 
 <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
 <main class="main-content">
@@ -85,30 +85,30 @@
   </ol>
   <p>All adapters include built-in production features:</p>
   <div class="badge-row">
-    <span class="badge green">✅ Automatic Retry</span>
-    <span class="badge green">✅ Timeout Handling</span>
-    <span class="badge green">✅ Health Checks</span>
-    <span class="badge green">✅ Structured Logging</span>
-    <span class="badge green">✅ API Key Validation</span>
+    <span class="badge green">Automatic Retry</span>
+    <span class="badge green">Timeout Handling</span>
+    <span class="badge green">Health Checks</span>
+    <span class="badge green">Structured Logging</span>
+    <span class="badge green">API Key Validation</span>
   </div>
 
   <div class="adapter-grid">
-    <div class="adapter-card"><div class="adapter-icon">🟢</div><h4>OpenAI</h4><p>GPT-4o, GPT-4, GPT-3.5</p></div>
-    <div class="adapter-card"><div class="adapter-icon">🟣</div><h4>Anthropic</h4><p>Claude 3.5, Claude 3</p></div>
-    <div class="adapter-card"><div class="adapter-icon">🔵</div><h4>Gemini</h4><p>Gemini 2.0, 1.5</p></div>
-    <div class="adapter-card"><div class="adapter-icon">🦙</div><h4>Ollama</h4><p>Llama 3, Mistral, etc.</p></div>
-    <div class="adapter-card"><div class="adapter-icon">🌐</div><h4>LiteLLM</h4><p>100+ providers</p></div>
+    <div class="adapter-card"><h4>OpenAI</h4><p>GPT-4o, GPT-4, GPT-3.5</p></div>
+    <div class="adapter-card"><h4>Anthropic</h4><p>Claude 3.5, Claude 3</p></div>
+    <div class="adapter-card"><h4>Gemini</h4><p>Gemini 2.0, 1.5</p></div>
+    <div class="adapter-card"><h4>Ollama</h4><p>Llama 3, Mistral, etc.</p></div>
+    <div class="adapter-card"><h4>LiteLLM</h4><p>100+ providers</p></div>
   </div>
 
   <h3>Choosing an Adapter</h3>
   <table class="param-table">
     <thead><tr><th>Adapter</th><th>Best For</th><th>Embeddings</th><th>Cost</th></tr></thead>
     <tbody>
-      <tr><td><strong>OpenAI</strong></td><td>Best overall extraction quality, widest model selection</td><td>✅ Native (<code>text-embedding-3-small</code>)</td><td>Pay per token</td></tr>
-      <tr><td><strong>Anthropic</strong></td><td>Long context conversations, strong reasoning</td><td>❌ No embedding API — use Dual-Adapter</td><td>Pay per token</td></tr>
-      <tr><td><strong>Gemini</strong></td><td>Large context windows, Google Cloud integration</td><td>✅ Native (<code>text-embedding-004</code>)</td><td>Pay per token / Free tier</td></tr>
-      <tr><td><strong>Ollama</strong></td><td>Local/private deployment, zero cost, offline use</td><td>✅ Native (<code>nomic-embed-text</code>)</td><td>Free (local GPU)</td></tr>
-      <tr><td><strong>LiteLLM</strong></td><td>Multi-provider routing, Azure/Bedrock/Cohere access</td><td>✅ Via LiteLLM routing</td><td>Varies by provider</td></tr>
+      <tr><td><strong>OpenAI</strong></td><td>Best overall extraction quality, widest model selection</td><td><span class="badge green">Supported</span> Native (<code>text-embedding-3-small</code>)</td><td>Pay per token</td></tr>
+      <tr><td><strong>Anthropic</strong></td><td>Long context conversations, strong reasoning</td><td><span class="badge yellow">Unsupported</span> No embedding API — use Dual-Adapter</td><td>Pay per token</td></tr>
+      <tr><td><strong>Gemini</strong></td><td>Large context windows, Google Cloud integration</td><td><span class="badge green">Supported</span> Native (<code>text-embedding-004</code>)</td><td>Pay per token / Free tier</td></tr>
+      <tr><td><strong>Ollama</strong></td><td>Local/private deployment, zero cost, offline use</td><td><span class="badge green">Supported</span> Native (<code>nomic-embed-text</code>)</td><td>Free (local GPU)</td></tr>
+      <tr><td><strong>LiteLLM</strong></td><td>Multi-provider routing, Azure/Bedrock/Cohere access</td><td><span class="badge green">Supported</span> Via LiteLLM routing</td><td>Varies by provider</td></tr>
     </tbody>
   </table>
 </section>
@@ -143,7 +143,7 @@ adapter = <span class="fn">OpenAIAdapter</span>(
 is_healthy = <span class="kw">await</span> adapter.<span class="fn">health_check</span>()</code></pre>
 
   <div class="callout tip">
-    <p><strong>💡 Environment Variable:</strong> Set <code>OPENAI_API_KEY</code> in your environment, or pass a pre-configured client: <code>OpenAIAdapter(client=AsyncOpenAI(api_key="sk-..."))</code></p>
+    <p><strong>Environment Variable:</strong> Set <code>OPENAI_API_KEY</code> in your environment, or pass a pre-configured client: <code>OpenAIAdapter(client=AsyncOpenAI(api_key="sk-..."))</code></p>
   </div>
 </section>
 
@@ -171,7 +171,7 @@ adapter = <span class="fn">AnthropicAdapter</span>(
 )</code></pre>
 
   <div class="callout warning">
-    <p><strong>⚠️ No Embedding API:</strong> Anthropic does not provide an embeddings API. Use the <a href="#dual-adapter">Dual-Adapter</a> pattern with OpenAI or Ollama as the <code>internal_adapter</code> for embedding generation. Without embeddings, semantic similarity search and contradiction detection cannot function.</p>
+    <p><strong>No Embedding API:</strong> Anthropic does not provide an embeddings API. Use the <a href="#dual-adapter">Dual-Adapter</a> pattern with OpenAI or Ollama as the <code>internal_adapter</code> for embedding generation. Without embeddings, semantic similarity search and contradiction detection cannot function.</p>
   </div>
 </section>
 
@@ -351,7 +351,7 @@ tracker = <span class="fn">BeliefTracker</span>(
   │ (Claude 3.5 Sonnet) │                 │  (Ollama / Llama3)  │
   │                     │                 │                     │
   │  • to_llm_call()    │                 │  • generate()       │
-  │  • to_llm_response()│    ────────▶    │  • get_embeddings() │
+  │  • to_llm_response()│    ────────>    │  • get_embeddings() │
   │  (payload parsing)  │  belief tasks   │  • health_check()   │
   └─────────────────────┘                 └─────────────────────┘</pre>
   </div>
@@ -378,7 +378,7 @@ tracker = <span class="fn">BeliefTracker</span>(
 <!-- ── Footer ── -->
 <footer class="site-footer">
   <p>
-    Built with ❤️ · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a> · MIT License
+    MIT Licensed · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a>
   </p>
 </footer>
 
@@ -425,8 +425,8 @@ tracker = <span class="fn">BeliefTracker</span>(
   navLinks.forEach(link => { link.addEventListener('click', () => { const sidebar = document.querySelector('.sidebar'); if (sidebar) sidebar.classList.remove('open'); }); });
 
   const sidebarToggle = document.getElementById('sidebar-toggle');
-  if (localStorage.getItem('sidebar-collapsed') === 'true') { document.body.classList.add('sidebar-collapsed'); if (sidebarToggle) sidebarToggle.textContent = '▶'; } else { document.body.classList.remove('sidebar-collapsed'); if (sidebarToggle) sidebarToggle.textContent = '◀'; }
-  if (sidebarToggle) { sidebarToggle.addEventListener('click', () => { const isCollapsed = document.body.classList.toggle('sidebar-collapsed'); localStorage.setItem('sidebar-collapsed', isCollapsed); sidebarToggle.textContent = isCollapsed ? '▶' : '◀'; }); }
+  if (localStorage.getItem('sidebar-collapsed') === 'true') { document.body.classList.add('sidebar-collapsed'); } else { document.body.classList.remove('sidebar-collapsed'); }
+  if (sidebarToggle) { sidebarToggle.addEventListener('click', () => { const isCollapsed = document.body.classList.toggle('sidebar-collapsed'); localStorage.setItem('sidebar-collapsed', isCollapsed); }); }
 </script>
 
 </body>

@@ -17,7 +17,7 @@
 <!-- ═══════════════ SIDEBAR ═══════════════ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <div class="sidebar-logo">🧠 BeliefState</div>
+    <div class="sidebar-logo">BeliefState</div>
     <div class="sidebar-version">v1.0.2</div>
   </div>
   <nav>
@@ -67,14 +67,14 @@
   </nav>
 </aside>
 
-<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar">◀</button>
+<button class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Toggle sidebar"></button>
 
 <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
 <main class="main-content">
 
 <!-- ── Hero ── -->
 <section class="hero">
-  <div class="hero-badge">✨ Open Source · MIT Licensed</div>
+  <div class="hero-badge">Open Source · MIT Licensed</div>
   <h1>BeliefState</h1>
   <p class="hero-tagline">
     An asynchronous, zero-latency belief state tracking layer for Python.
@@ -84,7 +84,7 @@
   <div class="hero-actions">
     <div class="install-cmd" onclick="navigator.clipboard.writeText('pip install beliefstate')">
       <span class="prompt">$</span> pip install beliefstate
-      <span style="color: var(--color-text-dim); font-size: 0.75rem;">📋</span>
+      <span style="color: var(--color-text-dim); font-size: 0.7rem; border: 1px solid var(--color-border); padding: 0.1rem 0.35rem; border-radius: 4px; font-family: var(--font-sans); text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; background: rgba(255,255,255,0.03);">Copy</span>
     </div>
     <a href="#quickstart" class="btn-primary">Get Started →</a>
   </div>
@@ -93,32 +93,32 @@
 <!-- ── Feature Highlights ── -->
 <div class="feature-grid">
   <div class="feature-card">
-    <div class="icon">⚡</div>
+    <div class="icon" style="color: var(--color-primary); font-weight: 800; font-family: var(--font-mono);">01</div>
     <h3>Zero-Latency</h3>
     <p>Fire-and-forget background tasks. Your app never waits for extraction or contradiction detection.</p>
   </div>
   <div class="feature-card">
-    <div class="icon">🔌</div>
+    <div class="icon" style="color: var(--color-primary); font-weight: 800; font-family: var(--font-mono);">02</div>
     <h3>5 Providers</h3>
     <p>Native adapters for OpenAI, Anthropic, Gemini, Ollama, and LiteLLM with automatic retry and health checks.</p>
   </div>
   <div class="feature-card">
-    <div class="icon">🧠</div>
+    <div class="icon" style="color: var(--color-primary); font-weight: 800; font-family: var(--font-mono);">03</div>
     <h3>Smart Contradictions</h3>
     <p>Semantic embeddings + NLI judge to detect and resolve conflicting beliefs automatically.</p>
   </div>
   <div class="feature-card">
-    <div class="icon">🏗️</div>
+    <div class="icon" style="color: var(--color-primary); font-weight: 800; font-family: var(--font-mono);">04</div>
     <h3>Dual-Adapter</h3>
     <p>Use an expensive model for your app and a cheap/local model for background tracking.</p>
   </div>
   <div class="feature-card">
-    <div class="icon">🛡️</div>
+    <div class="icon" style="color: var(--color-primary); font-weight: 800; font-family: var(--font-mono);">05</div>
     <h3>Production-Grade</h3>
     <p>Circuit breakers, exponential backoff, health checks, OpenTelemetry tracing, and structured logging.</p>
   </div>
   <div class="feature-card">
-    <div class="icon">🔗</div>
+    <div class="icon" style="color: var(--color-primary); font-weight: 800; font-family: var(--font-mono);">06</div>
     <h3>Plug-and-Play</h3>
     <p>Middleware for FastAPI, Flask, ASGI, and callbacks for LangChain, LlamaIndex, and OpenAI Assistants.</p>
   </div>
@@ -146,6 +146,7 @@ pip install <span class="st">"beliefstate[litellm]"</span>
 
 <span class="cm"># Stores</span>
 pip install <span class="st">"beliefstate[redis]"</span>
+pip install <span class="st">"beliefstate[postgres]"</span>
 
 <span class="cm"># Framework integrations</span>
 pip install <span class="st">"beliefstate[fastapi]"</span>
@@ -187,7 +188,7 @@ tracker = <span class="fn">BeliefTracker</span>(config=config, adapter=adapter)
 <span class="dc">@tracker.wrap</span>
 <span class="kw">async def</span> <span class="fn">chat</span>(messages):
     <span class="kw">import</span> openai
-    client = openai.<span class="fn">AsyncClient</span>()
+    client = openai.<span class="fn">AsyncOpenAI</span>()
     response = <span class="kw">await</span> client.chat.completions.<span class="fn">create</span>(
         model=<span class="st">"gpt-4o"</span>,
         messages=messages
@@ -210,7 +211,7 @@ if __name__ == "__main__":
     asyncio.<span class="fn">run</span>(main())</code></pre>
 
   <div class="callout tip">
-    <p><strong>💡 Tip:</strong> Call <code>tracker.get_context_prompt()</code> to get formatted beliefs for injecting into your system prompt. This gives your LLM persistent memory across conversations.</p>
+    <p><strong>Tip:</strong> Call <code>tracker.get_context_prompt()</code> to get formatted beliefs for injecting into your system prompt. This gives your LLM persistent memory across conversations.</p>
   </div>
 </section>
 
@@ -224,7 +225,7 @@ if __name__ == "__main__":
   <div class="architecture-diagram">
     <pre>
   ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-  │   LLM Call   │────▶│   Extract    │────▶│   Detect     │────▶│   Resolve    │
+  │   LLM Call   │────>│   Extract    │────>│   Detect     │────>│   Resolve    │
   │ (Your App)   │     │   Beliefs    │     │ Contradicts  │     │ & Store      │
   └──────────────┘     └──────────────┘     └──────────────┘     └──────────────┘
         │                     │                    │                     │
@@ -287,7 +288,7 @@ context = <span class="kw">await</span> tracker.<span class="fn">get_context_pro
 <!-- ── Footer ── -->
 <footer class="site-footer">
   <p>
-    Built with ❤️ · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a> · MIT License
+    MIT Licensed · <a href="https://github.com/abhay-2108/beliefstate">GitHub</a> · <a href="https://pypi.org/project/beliefstate/">PyPI</a>
   </p>
 </footer>
 
@@ -363,17 +364,14 @@ context = <span class="kw">await</span> tracker.<span class="fn">get_context_pro
   // On load, restore state
   if (localStorage.getItem('sidebar-collapsed') === 'true') {
     document.body.classList.add('sidebar-collapsed');
-    if (sidebarToggle) sidebarToggle.textContent = '▶';
   } else {
     document.body.classList.remove('sidebar-collapsed');
-    if (sidebarToggle) sidebarToggle.textContent = '◀';
   }
 
   if (sidebarToggle) {
     sidebarToggle.addEventListener('click', () => {
       const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
       localStorage.setItem('sidebar-collapsed', isCollapsed);
-      sidebarToggle.textContent = isCollapsed ? '▶' : '◀';
     });
   }
 </script>
