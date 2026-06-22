@@ -103,8 +103,14 @@ module = [
 warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
-module = "numpy.*"
+module = [
+    "numpy",
+    "numpy.*",
+]
 ignore_errors = true
+follow_imports = "skip"
+
+
 
 
 [tool.ruff]
