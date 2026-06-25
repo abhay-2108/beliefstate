@@ -18,17 +18,47 @@
     beliefstate
   </a>
   <ul class="nav-links">
-    <li><a href="index.html#problem">The problem</a></li>
-    <li><a href="index.html#how">How it works</a></li>
-    <li><a href="why.html" class="active">Why beliefstate?</a></li>
-    <li><a href="configuration.html">Docs</a></li>
-    <li><a href="https://github.com/abhay-2108/beliefstate">GitHub</a></li>
+    <li><a href="index.html">Docs</a></li>
+    <li><a href="configuration.html">Configuration</a></li>
+    <li><a href="adapters.html">Adapters</a></li>
+    <li><a href="stores.html">Stores</a></li>
+    <li><a href="integrations.html">Integrations</a></li>
+    <li><a href="advanced.html">Advanced</a></li>
+    <li><a href="reference.html">Reference</a></li>
+    <li><a href="https://github.com/abhay-2108/beliefstate" target="_blank" rel="noopener">GitHub</a></li>
   </ul>
   <a href="index.html#quickstart" class="nav-cta">Get started</a>
+  <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle Menu">
+    <span class="line"></span>
+    <span class="line"></span>
+    <span class="line"></span>
+  </button>
 </nav>
 
-<!-- Mobile Menu Button -->
-<button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Toggle menu">☰</button>
+<!-- MOBILE MENU OVERLAY -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+  <div class="mobile-menu-container">
+    <div class="mobile-menu-group-title">Pages</div>
+    <ul class="mobile-nav-links">
+      <li><a href="index.html">Docs</a></li>
+      <li><a href="configuration.html">Configuration</a></li>
+      <li><a href="adapters.html">Adapters</a></li>
+      <li><a href="stores.html">Stores</a></li>
+      <li><a href="integrations.html">Integrations</a></li>
+      <li><a href="advanced.html">Advanced</a></li>
+      <li><a href="reference.html">Reference</a></li>
+      <li><a href="https://github.com/abhay-2108/beliefstate" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+
+    <div class="mobile-menu-group-title">Why Sections</div>
+    <div class="mobile-sidebar-sections">
+      <a href="#why-beliefstate">Why beliefstate?</a>
+      <a href="#context-vs-memory">Context vs Memory</a>
+      <a href="#design-patterns">Design Patterns</a>
+      <a href="#architecture-advantage">Vector DB vs beliefstate</a>
+    </div>
+  </div>
+</div>
 
 <div class="docs-layout">
 
@@ -154,6 +184,7 @@ agent: "Let's import psycopg2 and connect to the postgres database..."
       <p>
         Standard RAG (Retrieval-Augmented Generation) uses vector search to retrieve chunks of raw text history. This fails for state tracking:
       </p>
+      <div class="table-wrapper">
       <table class="param-table">
         <thead>
           <tr>
@@ -185,6 +216,7 @@ agent: "Let's import psycopg2 and connect to the postgres database..."
           </tr>
         </tbody>
       </table>
+      </div>
       
       <div class="code-callout">
         ✓ Structured memory state<br>
@@ -219,6 +251,7 @@ agent: "Let's import psycopg2 and connect to the postgres database..."
 </div>
 
 <script src="search.js"></script>
+<script src="script.js"></script>
 <script>
   // Close mobile sidebar on link click
   const navLinks = document.querySelectorAll('.sidebar-nav a');
