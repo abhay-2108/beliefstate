@@ -80,48 +80,50 @@ class FastAPIBeliefTrackerMiddleware(BeliefTrackerASGIMiddleware):
             await self.app(scope, receive, send)
 
 
-async def get_session_id(
-    request: Request, x_session_id: Optional[str] = Header(None, alias="X-Session-ID")
-) -> AsyncGenerator[Optional[str], None]:
-    """
-    FastAPI dependency injection helper to extract the session ID from the
-    X-Session-ID header (or fallback to request.state) and bind it to the
-    tracker context.
+if HAS_FASTAPI:
 
-    Features:
-    - Graceful fallback if session ID is missing (allows optional sessions)
-    - Request-scoped context propagation
-    - Structured logging
+    async def get_session_id(
+        request: Request, x_session_id: Optional[str] = Header(None, alias="X-Session-ID")
+    ) -> AsyncGenerator[Optional[str], None]:
+        """
+        FastAPI dependency injection helper to extract the session ID from the
+        X-Session-ID header (or fallback to request.state) and bind it to the
+        tracker context.
 
-    Usage:
-        @app.post("/chat")
-        async def chat(message: str, session_id: str = Depends(get_session_id)):
-            # session_id is automatically set in tracker context
-            ...
+        Features:
+        - Graceful fallback if session ID is missing (allows optional sessions)
+        - Request-scoped context propagation
+        - Structured logging
 
-    Raises:
-        ValueError: If session ID validation fails (can be caught by FastAPI error handlers)
-    """
-    log = IntegrationLogger(__name__, "FastAPI")
+        Usage:
+            @app.post("/chat")
+            async def chat(message: str, session_id: str = Depends(get_session_id)):
+                # session_id is automatically set in tracker context
+                ...
 
-    # Try to get session ID from header, then from request state
-    sid = x_session_id or getattr(request.state, "session_id", None)
+        Raises:
+            ValueError: If session ID validation fails (can be caught by FastAPI error handlers)
+        """
+        log = IntegrationLogger(__name__, "FastAPI")
 
-    if sid:
-        try:
-            # Validate session ID
-            sid = validate_session_id(sid)
-            token = session_context.set(sid)
+        # Try to get session ID from header, then from request state
+        sid = x_session_id or getattr(request.state, "session_id", None)
+
+        if sid:
             try:
-                log.debug("Session context set in dependency", session_id=sid)
-                yield sid
-            finally:
-                session_context.reset(token)
-                log.debug("Session context reset in dependency", session_id=sid)
-        except ValueError as e:
-            log.error("Invalid session ID in dependency", error=str(e))
-            raise
-    else:
-        # Session ID is optional
-        log.debug("No session ID provided in dependency (optional)")
-        yield None
+                # Validate session ID
+                sid = validate_session_id(sid)
+                token = session_context.set(sid)
+                try:
+                    log.debug("Session context set in dependency", session_id=sid)
+                    yield sid
+                finally:
+                    session_context.reset(token)
+                    log.debug("Session context reset in dependency", session_id=sid)
+            except ValueError as e:
+                log.error("Invalid session ID in dependency", error=str(e))
+                raise
+        else:
+            # Session ID is optional
+            log.debug("No session ID provided in dependency (optional)")
+            yield None

@@ -138,8 +138,8 @@ async def test_tracker_context_injection():
     # 1. Test get_context_prompt
     context = await tracker.get_context_prompt("session_999")
     assert "Established facts from this conversation:" in context
-    assert "- USER likes python" in context
-    assert "- USER lives in Paris" in context
+    assert "- user likes python" in context
+    assert "- user lives in Paris" in context
 
     # 2. Test inject_context prepending new system message
     messages = [{"role": "user", "content": "Hello!"}]
