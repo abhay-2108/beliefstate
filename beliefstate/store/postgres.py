@@ -122,6 +122,7 @@ class PostgreSQLStore(Store):
                 CREATE TABLE IF NOT EXISTS beliefs_audit (
                     id          SERIAL PRIMARY KEY,
                     session_id  VARCHAR(255) NOT NULL,
+                    conversation_id VARCHAR(255) NOT NULL DEFAULT '',
                     subject     VARCHAR(255) NOT NULL,
                     predicate   VARCHAR(255) NOT NULL,
                     old_value   TEXT,
@@ -156,6 +157,14 @@ class PostgreSQLStore(Store):
             await conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_pg_audit_session ON beliefs_audit(session_id, subject, predicate);"
             )
+
+            # Migrate beliefs_audit: add conversation_id if missing
+            try:
+                await conn.execute(
+                    "ALTER TABLE beliefs_audit ADD COLUMN IF NOT EXISTS conversation_id VARCHAR(255) NOT NULL DEFAULT ''"
+                )
+            except Exception as e:
+                logger.debug(f"Audit table migration check failed (non-critical): {e}")
 
     async def add_belief(self, session_id: str, belief: Belief) -> None:
         pool = await self._get_pool()
@@ -368,10 +377,11 @@ class PostgreSQLStore(Store):
         """Write an immutable audit record for a belief mutation."""
         await conn.execute(
             """INSERT INTO beliefs_audit
-               (session_id, subject, predicate, old_value, new_value,
+               (session_id, conversation_id, subject, predicate, old_value, new_value,
                 operation, source_quote, confidence, turn)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)""",
             belief.session_id or "",
+            belief.conversation_id or "",
             belief.subject,
             belief.predicate,
             old_value,
@@ -481,6 +491,14 @@ class PostgreSQLStore(Store):
     ) -> None:
         pool = await self._get_pool()
         async with pool.acquire() as conn:
+            # Audit before delete
+            try:
+                existing = await self.get_by_key(subject, predicate, session_id)
+                if existing:
+                    await self._audit(conn, existing, "delete")
+            except Exception as e:
+                logger.debug(f"Audit lookup failed (non-critical): {e}")
+
             await conn.execute(
                 "DELETE FROM beliefs WHERE session_id = $1 AND subject = $2 AND predicate = $3",
                 session_id,

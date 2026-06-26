@@ -51,7 +51,7 @@ class RedisStore(Store):
                 "redis package is not installed. Run `pip install redis`"
             )
 
-        field = f"{belief.subject}::{belief.predicate}"
+        field = f"{(belief.subject or '').lower()}::{(belief.predicate or '').lower()}"
         await self._client.hset(
             self._get_key(session_id), field, belief.model_dump_json()
         )
@@ -85,7 +85,7 @@ class RedisStore(Store):
         limit: int = 5,
         conversation_id: Optional[str] = None,
     ) -> List[Belief]:
-        beliefs = await self.get_beliefs(session_id)
+        beliefs = await self.get_beliefs(session_id, conversation_id)
         scored_beliefs = []
 
         for b in beliefs:
@@ -128,8 +128,8 @@ class RedisStore(Store):
         Returns True if written, False if discarded (stale write).
         """
         existing = await self.get_by_key(
-            (belief.subject or "").lower(),
-            (belief.predicate or "").lower(),
+            belief.subject or "",
+            belief.predicate or "",
             belief.session_id or "",
             belief.conversation_id or "",
         )
@@ -146,7 +146,7 @@ class RedisStore(Store):
                 "redis package is not installed. Run `pip install redis`"
             )
 
-        field = f"{subject}::{predicate}"
+        field = f"{subject.lower()}::{predicate.lower()}"
         await self._client.hdel(self._get_key(session_id), field)
 
     async def update_belief(self, session_id: str, belief: Belief) -> None:
@@ -211,3 +211,15 @@ class RedisStore(Store):
                 item = item.decode("utf-8")
             results.append(json.loads(item))
         return results
+
+    async def close(self) -> None:
+        """Close Redis connection."""
+        if self._client:
+            await self._client.aclose()
+            self._client = None
+
+    async def __aenter__(self) -> "RedisStore":
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        await self.close()

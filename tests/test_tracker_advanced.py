@@ -203,7 +203,7 @@ class TestTrackerQueryMethods:
         stats = await tracker.get_stats_dict("s1")
         assert stats["total_beliefs"] == 2
         assert stats["avg_confidence"] == pytest.approx(0.9, abs=0.01)
-        assert stats["by_subject"]["USER"] == 2
+        assert stats["by_subject"]["user"] == 2
         assert stats["by_source"]["user"] == 2
 
     @pytest.mark.asyncio
@@ -233,7 +233,7 @@ class TestTrackerQueryMethods:
 
         summary = await tracker.get_summary("s1")
         # Should only have 2 beliefs (max_beliefs=2)
-        assert summary.count("- USER") == 2
+        assert summary.count("- user") == 2
 
 
 # ── GDPR clear_session ───────────────────────────────────────────────────
@@ -300,7 +300,7 @@ class TestContextInjection:
 
         prompt = await tracker.get_context_prompt("s1")
         # Should only include 3 beliefs
-        assert prompt.count("- USER") == 3
+        assert prompt.count("- user") == 3
 
     @pytest.mark.asyncio
     async def test_get_context_prompt_filters_hypothetical(self):

@@ -202,7 +202,7 @@ class TestSQLiteMemoryConnection:
 
         beliefs = await store.get_beliefs("s1")
         assert len(beliefs) == 1
-        assert beliefs[0].subject == "USER"
+        assert beliefs[0].subject == "user"
 
         await store.close()
 
@@ -456,7 +456,7 @@ class TestEmbeddingModelMismatch:
         )
 
         new_b = make_belief(
-            value="Python",
+            value="Python is great",
             session_id="s1",
             embedding=[0.1] * 10,
             embedding_dim=1536,
@@ -682,7 +682,7 @@ class TestBeliefHistory:
         b2 = make_belief(value="SQLite", turn=2, session_id="s1")
         await store.add_belief("s1", b2)
 
-        history = await store.get_audit_history("s1", "USER", "likes")
+        history = await store.get_audit_history("s1", "user", "likes")
         assert len(history) >= 1  # at least one create record
 
         await store.close()

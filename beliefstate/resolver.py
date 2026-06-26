@@ -76,7 +76,8 @@ class BeliefResolver:
                 await target_store.add_belief(session_id, new_b)
 
             elif self.strategy == "keep_old":
-                pass
+                self.conflict_history[session_id][conflict_key] = current_count + 1
+                continue
 
             elif self.strategy == "raise":
                 raise ValueError(

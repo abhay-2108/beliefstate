@@ -416,19 +416,20 @@ class BeliefTracker:
         task.add_done_callback(self._pending_tasks.discard)
 
     async def shutdown(self, grace_seconds: float = 5.0) -> None:
-        """Gracefully drain pending background tasks.
+        """Gracefully drain pending background tasks and close the store.
 
         Call this in FastAPI lifespan on_shutdown or signal handler.
         """
-        if not self._pending_tasks:
-            return
-        logger.info(
-            f"beliefstate_shutdown: draining {len(self._pending_tasks)} pending tasks"
-        )
-        await asyncio.wait(self._pending_tasks, timeout=grace_seconds)
-        for task in list(self._pending_tasks):
-            if not task.done():
-                task.cancel()
+        if self._pending_tasks:
+            logger.info(
+                f"beliefstate_shutdown: draining {len(self._pending_tasks)} pending tasks"
+            )
+            await asyncio.wait(self._pending_tasks, timeout=grace_seconds)
+            for task in list(self._pending_tasks):
+                if not task.done():
+                    task.cancel()
+        if hasattr(self.store, "close"):
+            await self.store.close()
 
     async def __aenter__(self) -> "BeliefTracker":
         if hasattr(self.store, "open"):

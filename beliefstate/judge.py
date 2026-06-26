@@ -58,7 +58,7 @@ class LLMJudge(ContradictionJudge):
             data = None
             try:
                 data = json.loads(raw_text)
-            except Exception:
+            except (json.JSONDecodeError, TypeError):
                 import re
 
                 match_obj = re.search(r"\{.*\}", raw_text, re.DOTALL)

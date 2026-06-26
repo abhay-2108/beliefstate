@@ -162,7 +162,7 @@ async def test_sqlite_store():
         # Retrieve belief
         beliefs = await store.get_beliefs("test-session")
         assert len(beliefs) > 0
-        assert beliefs[0].subject == "TEST"
+        assert beliefs[0].subject == "test"
 
         # Clear session
         await store.clear("test-session")

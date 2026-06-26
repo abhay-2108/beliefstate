@@ -223,6 +223,7 @@ class SQLiteStore(Store):
             CREATE TABLE IF NOT EXISTS beliefs_audit (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_id  TEXT NOT NULL,
+                conversation_id TEXT NOT NULL DEFAULT '',
                 subject     TEXT NOT NULL,
                 predicate   TEXT NOT NULL,
                 old_value   TEXT,
@@ -234,6 +235,18 @@ class SQLiteStore(Store):
                 created_at  TEXT NOT NULL DEFAULT (datetime('now'))
             )
         """)
+
+        # Migrate beliefs_audit: add conversation_id if missing
+        try:
+            async with conn.execute("PRAGMA table_info(beliefs_audit)") as cursor:
+                audit_cols = {row[1] for row in await cursor.fetchall()}
+            if "conversation_id" not in audit_cols:
+                await conn.execute(
+                    "ALTER TABLE beliefs_audit ADD COLUMN conversation_id TEXT NOT NULL DEFAULT ''"
+                )
+                logger.info("Added 'conversation_id' to beliefs_audit table")
+        except Exception as e:
+            logger.debug(f"Audit table migration check failed (non-critical): {e}")
 
         await conn.commit()
 
@@ -247,13 +260,14 @@ class SQLiteStore(Store):
         conn = await self._get_connection()
         await conn.execute(
             """INSERT INTO beliefs_audit
-               (session_id, subject, predicate, old_value, new_value,
+               (session_id, conversation_id, subject, predicate, old_value, new_value,
                 operation, source_quote, confidence, turn)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 belief.session_id or "",
-                belief.subject,
-                belief.predicate,
+                belief.conversation_id or "",
+                (belief.subject or "").lower(),
+                (belief.predicate or "").lower(),
                 old_value,
                 belief.value,
                 operation,
@@ -267,13 +281,16 @@ class SQLiteStore(Store):
         conn = await self._get_connection()
         embedding_blob = pack_embedding(belief.embedding) if belief.embedding else b""
         conversation_id = belief.conversation_id or ""
+        # Normalize to lowercase for case-insensitive matching
+        subject = (belief.subject or "").lower()
+        predicate = (belief.predicate or "").lower()
 
         # Check for existing belief for audit trail
         old_value = None
         try:
             existing = await self.get_by_key(
-                belief.subject.lower(),
-                belief.predicate.lower(),
+                subject,
+                predicate,
                 session_id,
                 conversation_id,
             )
@@ -304,8 +321,8 @@ class SQLiteStore(Store):
             (
                 session_id,
                 conversation_id,
-                belief.subject,
-                belief.predicate,
+                subject,
+                predicate,
                 belief.value,
                 belief.confidence,
                 belief.turn,
@@ -411,27 +428,32 @@ class SQLiteStore(Store):
         if conversation_id:
             async with conn.execute(
                 """
-                SELECT subject, predicate, value, confidence, turn, source, source_quote, category, embedding, embedding_model, embedding_dim, belief_type, is_hypothetical, created_at, last_referenced_at, session_id, conversation_id,
-                       cosine_similarity_bin(?, embedding) as similarity
+                SELECT subject, predicate, value, confidence, turn, source, source_quote, category, embedding, embedding_model, embedding_dim, belief_type, is_hypothetical, created_at, last_referenced_at, session_id, conversation_id
                 FROM beliefs
-                WHERE session_id = ? AND conversation_id = ? AND similarity >= ?
-                ORDER BY similarity DESC
+                WHERE session_id = ? AND conversation_id = ? AND cosine_similarity_bin(?, embedding) >= ?
+                ORDER BY cosine_similarity_bin(?, embedding) DESC
                 LIMIT ?
              """,
-                (embedding_blob, session_id, conversation_id, threshold, limit),
+                (
+                    session_id,
+                    conversation_id,
+                    embedding_blob,
+                    threshold,
+                    embedding_blob,
+                    limit,
+                ),
             ) as cursor:
                 rows = await cursor.fetchall()
         else:
             async with conn.execute(
                 """
-                SELECT subject, predicate, value, confidence, turn, source, source_quote, category, embedding, embedding_model, embedding_dim, belief_type, is_hypothetical, created_at, last_referenced_at, session_id, conversation_id,
-                       cosine_similarity_bin(?, embedding) as similarity
+                SELECT subject, predicate, value, confidence, turn, source, source_quote, category, embedding, embedding_model, embedding_dim, belief_type, is_hypothetical, created_at, last_referenced_at, session_id, conversation_id
                 FROM beliefs
-                WHERE session_id = ? AND similarity >= ?
-                ORDER BY similarity DESC
+                WHERE session_id = ? AND cosine_similarity_bin(?, embedding) >= ?
+                ORDER BY cosine_similarity_bin(?, embedding) DESC
                 LIMIT ?
              """,
-                (embedding_blob, session_id, threshold, limit),
+                (session_id, embedding_blob, threshold, embedding_blob, limit),
             ) as cursor:
                 rows = await cursor.fetchall()
 
@@ -467,6 +489,8 @@ class SQLiteStore(Store):
         self, session_id: str, subject: str, predicate: str
     ) -> None:
         conn = await self._get_connection()
+        subject = subject.lower()
+        predicate = predicate.lower()
 
         # Audit before delete
         existing = await self.get_by_key(subject, predicate, session_id)
@@ -589,12 +613,12 @@ class SQLiteStore(Store):
         conn = await self._get_connection()
         async with conn.execute(
             """
-            SELECT turn, old_value, new_value, operation, confidence, created_at
+            SELECT turn, old_value, new_value, operation, confidence, created_at, conversation_id
             FROM beliefs_audit
             WHERE session_id = ? AND subject = ? AND predicate = ?
             ORDER BY id ASC
         """,
-            (session_id, subject, predicate),
+            (session_id, subject.lower(), predicate.lower()),
         ) as cursor:
             rows = await cursor.fetchall()
 
@@ -606,6 +630,7 @@ class SQLiteStore(Store):
                 "operation": r["operation"],
                 "confidence": r["confidence"],
                 "created_at": r["created_at"],
+                "conversation_id": r["conversation_id"],
             }
             for r in rows
         ]

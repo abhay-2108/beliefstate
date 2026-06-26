@@ -45,7 +45,7 @@ class InMemoryBeliefStore(Store):
         if session_id not in self._beliefs:
             self._beliefs[session_id] = OrderedDict()
 
-        field = f"{belief.subject}::{belief.predicate}"
+        field = f"{(belief.subject or '').lower()}::{(belief.predicate or '').lower()}"
         belief_size = self._estimate_belief_size(belief)
 
         if field in self._beliefs[session_id]:
@@ -84,7 +84,7 @@ class InMemoryBeliefStore(Store):
     ) -> List[Belief]:
         import math
 
-        beliefs = await self.get_beliefs(session_id)
+        beliefs = await self.get_beliefs(session_id, conversation_id)
         scored_beliefs = []
 
         for b in beliefs:
@@ -127,8 +127,8 @@ class InMemoryBeliefStore(Store):
         Returns True if written, False if discarded (stale write).
         """
         existing = await self.get_by_key(
-            (belief.subject or "").lower(),
-            (belief.predicate or "").lower(),
+            belief.subject or "",
+            belief.predicate or "",
             belief.session_id or "",
             belief.conversation_id or "",
         )
@@ -143,7 +143,7 @@ class InMemoryBeliefStore(Store):
         if session_id not in self._beliefs:
             return
 
-        field = f"{subject}::{predicate}"
+        field = f"{subject.lower()}::{predicate.lower()}"
         if field in self._beliefs[session_id]:
             belief = self._beliefs[session_id][field]
             belief_size = self._estimate_belief_size(belief)
@@ -194,3 +194,13 @@ class InMemoryBeliefStore(Store):
             if self.max_bytes > 0
             else 0,
         }
+
+    async def close(self) -> None:
+        """No-op for in-memory store."""
+        pass
+
+    async def __aenter__(self) -> "InMemoryBeliefStore":
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        await self.close()

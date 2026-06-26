@@ -290,7 +290,7 @@ class TestInjectContextFix:
         system_msg = result[0]
         assert system_msg["role"] == "system"
         assert "User context:" in system_msg["content"]
-        assert "USER likes Python" in system_msg["content"]
+        assert "user likes Python" in system_msg["content"]
 
     @pytest.mark.asyncio
     async def test_inject_context_appends_to_existing_system(self):
@@ -308,7 +308,7 @@ class TestInjectContextFix:
 
         assert len(result) == 2
         assert "You are a helpful assistant." in result[0]["content"]
-        assert "USER likes Python" in result[0]["content"]
+        assert "user likes Python" in result[0]["content"]
 
     @pytest.mark.asyncio
     async def test_inject_context_empty_session(self):
