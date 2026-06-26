@@ -1,192 +1,205 @@
-# BeliefState: A Universal LLM Belief State Tracker
+<p align="center">
+  <img src="assets/data_flow.png" alt="BeliefState" width="600">
+</p>
 
-**BeliefState** is an asynchronous, zero-latency belief state tracking layer for Python applications. It seamlessly intercepts Large Language Model (LLM) chats, extracts factual beliefs, resolves contradictions via an LLM judge, and saves them to persistent storage (SQLite or Redis) — completely in the background.
+<h1 align="center">BeliefState</h1>
 
-It supports **OpenAI, Anthropic, Gemini, Ollama, and LiteLLM** natively, and features a highly flexible **Dual-Adapter Architecture** that allows you to use different providers for your application vs your background tracking logic.
+<p align="center">
+  A production-ready belief state tracker for LLM applications.<br>
+  Extract facts, detect contradictions, and persist knowledge — automatically.
+</p>
 
----
-
-## 🚀 Features
-
-*   **Zero-Latency Tracking**: Extraction and conflict detection run in fire-and-forget background tasks.
-*   **Production-Grade Resilience**: Automatic retry with exponential backoff, configurable timeouts, and stateful circuit breakers to fail-fast during LLM API outages.
-*   **Health Checks & Monitoring**: Built-in health check methods for all adapters to verify provider connectivity before runtime.
-*   **Structured Logging**: Observable operations across all adapters and integrations for production debugging and monitoring.
-*   **Dual-Adapter Architecture**: Use an expensive model (like Claude) for your app, and a cheap/local model (like Ollama or OpenAI) for belief extraction and embeddings.
-*   **Persistent Task Queues**: Pluggable dispatcher support to run background tracking via **Celery** or **Redis Queue (RQ)** to ensure no beliefs are lost on server crashes.
-*   **Embedding Batching**: Combines multiple belief embedding requests into a single API call to prevent rate limit triggers, with a robust fallback to individual requests.
-*   **Smart Contradiction Resolution**: Uses semantic embeddings to group related facts, and an NLI judge to gracefully resolve contradictions (Overwrite, Keep Old, or Raise).
-*   **Plug-and-Play Integrations**: Includes helpers for `LangChain` Callbacks, `FastAPI` (ASGI), and `Flask` (WSGI) with automatic session validation.
+<p align="center">
+  <a href="https://pypi.org/project/beliefstate/"><img src="https://img.shields.io/pypi/v/beliefstate?color=blue" alt="PyPI"></a>
+  <a href="https://github.com/abhay-2108/beliefstate/blob/main/LICENSE"><img src="https://img.shields.io/github/license/abhay-2108/beliefstate" alt="License"></a>
+  <a href="https://pypi.org/project/beliefstate/"><img src="https://img.shields.io/pypi/pyversions/beliefstate" alt="Python"></a>
+  <a href="https://github.com/abhay-2108/beliefstate/actions"><img src="https://img.shields.io/badge/tests-passing-brightgreen" alt="Tests"></a>
+</p>
 
 ---
 
-## 📦 Installation
+## What is BeliefState?
 
-To install the core package:
+LLMs generate different answers every time. BeliefState gives your application **persistent memory** by intercepting LLM conversations in the background, extracting factual beliefs, resolving contradictions, and storing them — without adding latency to your request path.
+
+```python
+from beliefstate import BeliefTracker
+from beliefstate.adapters import OpenAIAdapter
+
+tracker = BeliefTracker(
+    adapter=OpenAIAdapter(model="gpt-4o"),
+    config={"store_type": "sqlite", "store_kwargs": {"db_path": "beliefs.db"}}
+)
+
+@tracker.wrap
+async def chat(messages):
+    # Your existing LLM logic — unchanged
+    return await openai_client.chat.completions.create(model="gpt-4o", messages=messages)
+
+tracker.set_session("user_123")
+await chat([{"role": "user", "content": "I live in Tokyo and work at Google."}])
+# BeliefState silently extracts: {subject: "user_123", predicate: "lives_in", value: "Tokyo"}
+#                                        {subject: "user_123", predicate: "works_at", value: "Google"}
+```
+
+---
+
+## Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Zero-latency tracking** | Extraction and contradiction detection run in fire-and-forget background tasks |
+| **5 LLM providers** | OpenAI, Anthropic, Gemini, Ollama, LiteLLM (100+ providers) |
+| **Dual-adapter architecture** | Use an expensive model for your app, a cheap/local model for tracking |
+| **Smart contradiction resolution** | NLI judge + semantic embeddings to gracefully resolve conflicting facts |
+| **Persistent stores** | SQLite, PostgreSQL, Redis, or in-memory — with full audit trails |
+| **Framework integrations** | LangChain, LlamaIndex, FastAPI, Flask, OpenAI Assistants — out of the box |
+| **Production resilience** | Retry with backoff, circuit breakers, health checks, structured logging |
+| **Pluggable dispatchers** | Celery, Redis Queue, or in-process — survive server restarts |
+
+---
+
+## Installation
+
 ```bash
 pip install beliefstate
 ```
 
-To install with extras (e.g., Redis, Celery, RQ, or LiteLLM):
+With optional extras:
+
 ```bash
-pip install "beliefstate[redis,celery,rq,litellm]"
+# Provider adapters
+pip install "beliefstate[openai]"
+pip install "beliefstate[anthropic]"
+pip install "beliefstate[gemini]"
+pip install "beliefstate[ollama]"
+pip install "beliefstate[litellm]"
+
+# Stores
+pip install "beliefstate[redis]"        # Redis store
+pip install "beliefstate[postgres]"     # PostgreSQL store
+
+# Framework integrations
+pip install "beliefstate[langchain]"
+pip install "beliefstate[llamaindex]"
+pip install "beliefstate[fastapi]"
+pip install "beliefstate[flask]"
+
+# Background dispatchers
+pip install "beliefstate[celery]"
+pip install "beliefstate[rq]"
+
+# Everything
+pip install "beliefstate[all]"
 ```
 
 ---
 
-## 🛠️ Quickstart
+## Quick Start
 
-The easiest way to track beliefs is using the `@tracker.wrap` decorator around your existing LLM function.
+### 1. Basic Usage
 
 ```python
 import asyncio
-from beliefstate import BeliefTracker, TrackerConfig
+from beliefstate import BeliefTracker
 from beliefstate.adapters import OpenAIAdapter
 
-# 1. Configure the Tracker
-config = TrackerConfig(
-    enable_background_tasks=True,
-    store_type="sqlite",
-    store_kwargs={"db_path": "user_beliefs.db"}
-)
-
-# 2. Initialize the Adapter and Tracker
-adapter = OpenAIAdapter(model="gpt-4o", embed_model="text-embedding-3-small")
-tracker = BeliefTracker(config=config, adapter=adapter)
-
-# 3. Wrap your standard application logic
-@tracker.wrap
-async def chat(messages):
-    import openai
-    client = openai.AsyncClient()
-    response = await client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages
-    )
-    return response
-
 async def main():
-    # Set the unique session/user ID
+    tracker = BeliefTracker(
+        adapter=OpenAIAdapter(model="gpt-4o"),
+        config={"store_type": "sqlite", "store_kwargs": {"db_path": "beliefs.db"}}
+    )
+
+    @tracker.wrap
+    async def chat(messages):
+        import openai
+        client = openai.AsyncClient()
+        return await client.chat.completions.create(model="gpt-4o", messages=messages)
+
     tracker.set_session("user_123")
-    
-    # Run your app normally! The tracker intercepts and extracts silently.
-    await chat([{"role": "user", "content": "I am a Python developer living in Tokyo."}])
+    await chat([{"role": "user", "content": "I'm a Rust developer based in Berlin."}])
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    # Query stored beliefs
+    beliefs = await tracker.store.get_beliefs("user_123")
+    for b in beliefs:
+        print(f"  {b.subject} {b.predicate} = {b.value}")
+
+asyncio.run(main())
+```
+
+### 2. Querying Beliefs
+
+```python
+# Get all beliefs for a session
+beliefs = await tracker.store.get_beliefs("user_123")
+
+# Search by semantic similarity
+results = await tracker.store.search_beliefs(
+    session_id="user_123",
+    query="where does the user live",
+    top_k=5
+)
+
+# Get belief audit trail
+audit = await tracker.store.get_audit_history(
+    session_id="user_123",
+    subject="user_123",
+    predicate="lives_in"
+)
+```
+
+### 3. Cleanup
+
+```python
+# Graceful shutdown — waits for background tasks to finish
+await tracker.shutdown(grace_seconds=5.0)
 ```
 
 ---
 
-## 🏭 Production Readiness
-
-BeliefState includes comprehensive production-grade features for reliable deployment:
-
-### ✅ Automatic Retry & Timeout Handling
-All adapters automatically retry transient errors (rate limits, timeouts, connection issues) with exponential backoff:
-
-```python
-from beliefstate.adapters import OpenAIAdapter, RetryConfig
-
-# Configure retry strategy
-retry_config = RetryConfig(
-    max_retries=3,
-    initial_delay=1.0,
-    max_delay=30.0,
-    exponential_base=2.0,
-    jitter=True  # Prevents thundering herd
-)
-
-adapter = OpenAIAdapter(
-    retry_config=retry_config,
-    timeout=30.0  # Configurable per adapter
-)
-```
-
-### ✅ Health Checks
-Verify provider connectivity before processing requests:
-
-```python
-# Check if OpenAI API is available
-is_healthy = await adapter.health_check()
-if not is_healthy:
-    logger.error("OpenAI is not responding")
-    # Fallback or fail-fast
-```
-
-### ✅ Structured Logging
-All components include structured logging for observability:
-
-```
-[OpenAI] Initialized model=gpt-4o-mini embed_model=text-embedding-3-small
-[OpenAI] Attempt 1/3: generate
-[FastAPI] Request started request_id=abc-123 session_id=user_123
-[FastAPI] Request completed request_id=abc-123 latency_seconds=0.234
-```
-
-### ✅ API Key Validation
-Automatic validation of API keys at initialization with clear error messages.
-
-### ✅ Traditional Resilience Config (TrackerConfig)
-You can also tune the retry behavior and circuit breakers directly in `TrackerConfig`:
-
-```python
-config = TrackerConfig(
-    # API Retries (exponential backoff)
-    retry_max_attempts=5,
-    retry_min_wait=2.0,       # seconds
-    retry_max_wait=30.0,      # seconds
-    retry_multiplier=2.0,
-
-    # Circuit Breakers (fail-fast to protect your app)
-    enable_circuit_breaker=True,
-    circuit_breaker_failure_threshold=5,
-    circuit_breaker_recovery_timeout=30.0
-)
-```
-
----
-
-## � Supported Providers
+## Supported Providers
 
 ### OpenAI
+
 ```python
 from beliefstate.adapters import OpenAIAdapter
 
 adapter = OpenAIAdapter(
     model="gpt-4o",
     embed_model="text-embedding-3-small",
-    timeout=30.0
+    timeout=30.0,
+    health_check_timeout=5.0,
+    retry_config=RetryConfig(max_retries=3, initial_delay=1.0),
 )
-# Features: ✅ Retry, ✅ Timeout, ✅ Health Check, ✅ Structured Logging
 ```
 
-### Anthropic (Claude)
+### Anthropic
+
 ```python
 from beliefstate.adapters import AnthropicAdapter
 
 adapter = AnthropicAdapter(
     model="claude-3-5-sonnet-latest",
-    timeout=30.0
+    default_max_tokens=1024,
+    timeout=30.0,
 )
-# Features: ✅ Retry, ✅ Timeout, ✅ Health Check, ✅ Structured Logging
-# Note: For embeddings, use OpenAI or Ollama as internal_adapter
+# Note: Use OpenAI or Ollama as internal_adapter for embeddings
 ```
 
 ### Google Gemini
+
 ```python
 from beliefstate.adapters import GeminiAdapter
 
 adapter = GeminiAdapter(
     model="gemini-2.0-flash",
     embed_model="text-embedding-004",
-    timeout=30.0,
-    safety_settings=[...]  # Optional safety configuration
+    safety_settings=[{"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"}],
 )
-# Features: ✅ Retry, ✅ Timeout, ✅ Health Check, ✅ Safety Settings
 ```
 
 ### Ollama (Local)
+
 ```python
 from beliefstate.adapters import OllamaAdapter
 
@@ -194,223 +207,249 @@ adapter = OllamaAdapter(
     model="llama3.2",
     embed_model="nomic-embed-text",
     host="http://localhost",
-    port=11434
+    port=11434,
 )
-# Features: ✅ Retry, ✅ Timeout, ✅ Health Check, ✅ Local Deployment
 ```
 
 ### LiteLLM (Multi-Provider)
+
 ```python
 from beliefstate.adapters import LiteLLMAdapter
 
-# Route to any of 100+ providers
-adapter = LiteLLMAdapter(
-    model="azure/gpt-4",  # or "bedrock/anthropic.claude-3-sonnet"
-    embed_model="cohere/embed-english-v3.0"
-)
-# Features: ✅ Retry, ✅ Timeout, ✅ Health Check, ✅ Multi-Provider
+# Route to any of 100+ providers via a unified interface
+adapter = LiteLLMAdapter(model="azure/gpt-4o", embed_model="cohere/embed-english-v3.0")
 ```
 
 ---
 
-## �🚂 Pluggable Background Dispatchers (Celery / RQ)
+## Dual-Adapter Architecture
 
-To offload tracking to a durable background worker, you can inject a pluggable `TaskDispatcher`.
-
-### Option A: Celery Dispatcher
+Use an expensive model for your application and a cheap/local model for background tracking:
 
 ```python
-from celery import Celery
-from beliefstate import BeliefTracker, TrackerConfig
-from beliefstate.dispatcher import CeleryDispatcher
-
-celery_app = Celery("tasks", broker="redis://localhost:6379/0")
-
-# Inject CeleryDispatcher into the tracker
-tracker = BeliefTracker(
-    config=TrackerConfig(),
-    adapter=app_adapter,
-    dispatcher=CeleryDispatcher(celery_app=celery_app)
-)
-```
-
-### Option B: RQ (Redis Queue) Dispatcher
-
-```python
-from redis import Redis
-from rq import Queue
-from beliefstate import BeliefTracker, TrackerConfig
-from beliefstate.dispatcher import RQDispatcher
-
-redis_conn = Redis(host="localhost", port=6379)
-queue = Queue("belief-state-tasks", connection=redis_conn)
-
-# Inject RQDispatcher into the tracker
-tracker = BeliefTracker(
-    config=TrackerConfig(),
-    adapter=app_adapter,
-    dispatcher=RQDispatcher(queue=queue)
-)
-```
-
-### Worker Setup
-In your background worker file, register the global tracker so that tasks enqueued by name can execute the tracking synchronously on the worker process:
-
-```python
-from beliefstate.dispatcher import register_global_tracker
-from my_app import tracker # Import your initialized BeliefTracker
-
-# Register the tracker inside your celery/rq worker startup script
-register_global_tracker(tracker)
-```
-
----
-
-## 🧠 The Dual-Adapter Architecture
-
-If your main application uses a provider that doesn't support embeddings (like Anthropic), or if you want to use a cheaper local model for tracking to save costs, you can use the **Dual-Adapter Architecture**.
-
-```python
+from beliefstate import BeliefTracker
 from beliefstate.adapters import AnthropicAdapter, OllamaAdapter
 
-# Your main app uses Claude 3.5 Sonnet
+# Your app uses Claude
 app_adapter = AnthropicAdapter(model="claude-3-5-sonnet-latest")
 
-# But the background tracker uses local Llama 3 for free!
+# Background tracker uses local Llama 3 (free, no API costs)
 bg_adapter = OllamaAdapter(model="llama3", embed_model="nomic-embed-text")
 
 tracker = BeliefTracker(
-    config=config,
-    adapter=app_adapter,             # Intercepts the Claude API payload
-    internal_adapter=bg_adapter      # Runs extraction, embeddings, and judge calls
-)
-```
-
-### 🔌 Multi-Provider Routing with LiteLLM
-
-If your application relies on enterprise cloud providers (like Azure OpenAI, AWS Bedrock, or Cohere), you can leverage the `LiteLLMAdapter` to unified-route completion and embedding requests.
-
-```python
-from beliefstate.adapters import LiteLLMAdapter
-
-# Configure dynamic routing via LiteLLM
-enterprise_adapter = LiteLLMAdapter(
-    model="azure/gpt-4o",
-    embed_model="cohere/embed-english-v3.0"
-)
-
-tracker = BeliefTracker(
-    config=config,
-    adapter=enterprise_adapter
+    adapter=app_adapter,
+    internal_adapter=bg_adapter,  # Runs extraction, embeddings, judge calls
 )
 ```
 
 ---
 
-## 🗄️ Stores
+## Stores
 
-Stores determine where the extracted facts live. You can configure them via `TrackerConfig(store_type="...")` or inject them directly.
+| Store | Use Case | Configuration |
+|-------|----------|---------------|
+| **SQLite** | Single-server production apps | `store_kwargs={"db_path": "beliefs.db"}` |
+| **PostgreSQL** | Multi-server, high-concurrency | `store_kwargs={"dsn": "postgresql://..."}` |
+| **Redis** | Distributed caching, multiple workers | `store_kwargs={"redis_url": "redis://localhost:6379/0"}` |
+| **Memory** | Testing, transient sessions | `store_type="memory"` |
 
-- **`sqlite`** (`SQLiteStore`): Asynchronous, persistent single-file database. Perfect for single-server production apps. (Use `db_path=":memory:"` for transient tests).
-- **`redis`** (`RedisStore`): Distributed caching. Essential if running multiple application workers (e.g., behind a load balancer).
+All stores implement the same interface and include full audit trails, case-insensitive lookup, and `conversation_id` scoping.
 
 ---
 
-## 🔌 Framework Integrations
+## Framework Integrations
 
-BeliefState ships with helpers for major frameworks to handle session tracking automatically with production-grade error handling.
+### FastAPI
 
-### FastAPI (ASGI) - Production Ready
 ```python
 from fastapi import FastAPI
 from beliefstate import FastAPIBeliefTrackerMiddleware
 
 app = FastAPI()
-app.add_middleware(
-    FastAPIBeliefTrackerMiddleware,
-    header_name="X-Session-ID"
-)
-# Features: ✅ Session validation, ✅ Error recovery, ✅ Structured logging
-# Automatically sets session_context from incoming header X-Session-ID
+app.add_middleware(FastAPIBeliefTrackerMiddleware, header_name="X-Session-ID")
 ```
 
-### Flask (WSGI) - Production Ready
+### Flask
+
 ```python
 from flask import Flask
 from beliefstate import FlaskBeliefTrackerMiddleware, register_flask_hooks
 
 app = Flask(__name__)
-# 1. WSGI Middleware context propagation
 app.wsgi_app = FlaskBeliefTrackerMiddleware(app.wsgi_app, header_name="X-Session-ID")
-
-# 2. Flask request lifetime hooks (alternative/additional)
 register_flask_hooks(app, header_name="X-Session-ID")
-
-# Features: ✅ Thread-safe, ✅ Session validation, ✅ Error recovery, ✅ Structured logging
-```
-
-### ASGI (Generic) - Production Ready
-```python
-from starlette.applications import Starlette
-from beliefstate import BeliefTrackerASGIMiddleware
-
-app = Starlette()
-app.add_middleware(
-    BeliefTrackerASGIMiddleware,
-    header_name="X-Session-ID"
-)
-# Features: ✅ HTTP & WebSocket support, ✅ Error handling, ✅ Logging
-```
-
-### LlamaIndex
-```python
-from llama_index.core import Settings
-from llama_index.core.callbacks import CallbackManager
-from beliefstate import LlamaIndexBeliefTrackerCallback
-
-callback_handler = LlamaIndexBeliefTrackerCallback(tracker=tracker)
-Settings.callback_manager = CallbackManager([callback_handler])
-```
-
-### OpenAI Assistant Observer
-```python
-import asyncio
-from beliefstate import observe_run
-
-# Poll run status and dispatch thread messages chronologically to background tracker
-asyncio.create_task(
-    observe_run(
-        tracker=tracker,
-        client=openai_client,
-        thread_id=thread_id,
-        run_id=run.id,
-        session_id="session_123"
-    )
-)
 ```
 
 ### LangChain
+
 ```python
 from beliefstate import session_context, BeliefTrackerLangchainCallback
 
-# 1. Set active session ID context
 session_context.set("user_123")
-
-# 2. Initialize and attach callback
 handler = BeliefTrackerLangchainCallback(tracker=tracker)
 await llm.ainvoke("Hello!", config={"callbacks": [handler]})
 ```
 
+### LlamaIndex
+
+```python
+from llama_index.core import Settings
+from beliefstate import LlamaIndexBeliefTrackerCallback
+
+Settings.callback_manager = CallbackManager([
+    LlamaIndexBeliefTrackerCallback(tracker=tracker)
+])
+```
+
+### OpenAI Assistants
+
+```python
+from beliefstate import observe_run
+
+asyncio.create_task(observe_run(
+    tracker=tracker, client=client,
+    thread_id="thread_123", run_id="run_abc",
+    session_id="user_123"
+))
+```
+
 ---
 
-## 📚 Documentation
+## Background Dispatchers
 
-For detailed information about production deployment, see:
-- **[PRODUCTION_ENHANCEMENTS.md](./PRODUCTION_ENHANCEMENTS.md)** - Comprehensive production readiness guide
-- **[documentation.md](./documentation.md)** - Developer reference guide
-- **[ADAPTER_AUDIT_REPORT.md](./ADAPTER_AUDIT_REPORT.md)** - Adapter audit findings and recommendations
+For durable background tracking that survives server restarts, use Celery or Redis Queue:
+
+```python
+# Celery
+from celery import Celery
+from beliefstate.dispatcher import CeleryDispatcher
+
+celery_app = Celery("tasks", broker="redis://localhost:6379/0")
+tracker = BeliefTracker(adapter=adapter, dispatcher=CeleryDispatcher(celery_app))
+
+# Redis Queue
+from redis import Redis
+from rq import Queue
+from beliefstate.dispatcher import RQDispatcher
+
+queue = Queue("beliefs", connection=Redis())
+tracker = BeliefTracker(adapter=adapter, dispatcher=RQDispatcher(queue=queue))
+```
+
+Register the tracker in your worker process:
+
+```python
+from beliefstate.dispatcher import register_global_tracker
+from my_app import tracker
+register_global_tracker(tracker)
+```
 
 ---
 
-## 📜 License
-MIT License
+## Configuration Reference
+
+```python
+from beliefstate import TrackerConfig
+from beliefstate.adapters import RetryConfig
+
+config = TrackerConfig(
+    # Store
+    store_type="sqlite",                    # sqlite | redis | postgres | memory
+    store_kwargs={"db_path": "beliefs.db"},
+
+    # Extraction
+    extraction_model="gpt-4o-mini",         # model for background extraction
+    embedding_model="text-embedding-3-small",
+    max_beliefs_per_turn=50,
+    similarity_threshold=0.7,
+
+    # Background tasks
+    enable_background_tasks=True,
+    max_concurrent_extractions=10,
+
+    # Resilience
+    retry_max_attempts=5,
+    retry_min_wait=2.0,
+    retry_max_wait=30.0,
+    retry_multiplier=2.0,
+
+    # Circuit breaker
+    enable_circuit_breaker=True,
+    circuit_breaker_failure_threshold=5,
+    circuit_breaker_recovery_timeout=30.0,
+)
+```
+
+See `beliefstate/tracker.py` for the full `TrackerConfig` schema.
+
+---
+
+## API Reference
+
+### BeliefTracker
+
+| Method | Description |
+|--------|-------------|
+| `set_session(session_id, conversation_id)` | Set the active session context |
+| `wrap(fn)` | Decorator that intercepts LLM calls and extracts beliefs |
+| `track(call, response, session_id)` | Manually track a single LLM call/response |
+| `shutdown(grace_seconds)` | Gracefully drain background tasks and close the store |
+
+### Store Interface
+
+| Method | Description |
+|--------|-------------|
+| `add_belief(session_id, belief)` | Insert or update a belief |
+| `get_beliefs(session_id)` | List all beliefs for a session |
+| `search_beliefs(session_id, query, top_k)` | Semantic search over beliefs |
+| `get_by_key(session_id, subject, predicate)` | Get a specific belief |
+| `remove_belief(session_id, subject, predicate)` | Delete a belief |
+| `get_audit_history(session_id, subject, predicate)` | Full mutation history |
+| `health_check()` | Verify store connectivity |
+
+### Adapter Interface
+
+| Method | Description |
+|--------|-------------|
+| `generate(call, response_format)` | Generate a completion |
+| `embed(texts)` | Embed a list of texts |
+| `health_check()` | Verify provider connectivity |
+| `inject_context(prompt)` | Inject context into a prompt |
+
+---
+
+## Development
+
+```bash
+git clone https://github.com/abhay-2108/beliefstate.git
+cd beliefstate
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Lint
+ruff check beliefstate/
+ruff format beliefstate/
+
+# Type check
+mypy beliefstate/
+```
+
+---
+
+## Contributing
+
+Contributions are welcome. Please open an issue first to discuss what you'd like to change.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Make your changes
+4. Run tests (`pytest`) and linter (`ruff check`)
+5. Submit a pull request
+
+---
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for details.
