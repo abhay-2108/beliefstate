@@ -83,7 +83,8 @@ class FastAPIBeliefTrackerMiddleware(BeliefTrackerASGIMiddleware):
 if HAS_FASTAPI:
 
     async def get_session_id(
-        request: Request, x_session_id: Optional[str] = Header(None, alias="X-Session-ID")
+        request: Request,
+        x_session_id: Optional[str] = Header(None, alias="X-Session-ID"),
     ) -> AsyncGenerator[Optional[str], None]:
         """
         FastAPI dependency injection helper to extract the session ID from the
