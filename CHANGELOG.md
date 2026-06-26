@@ -34,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Redis/Memory store field key includes `conversation_id`
 - Lowercase normalization in PostgreSQL `get_by_key`/`remove_belief`
 
+## [1.0.1] - 2026-06-18
+
+### Fixed
+- Pronoun mapping bias in belief extraction (separate user/assistant prompts)
+- Ollama adapter compatibility
+- Documentation improvements
+
 ## [1.0.0] - 2026-06-15
 
 ### Added
@@ -49,5 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Full test suite and documentation
 
 [Unreleased]: https://github.com/abhay-2108/beliefstate/compare/v1.0.2...HEAD
-[1.0.2]: https://github.com/abhay-2108/beliefstate/compare/v1.0.0...v1.0.2
+[1.0.2]: https://github.com/abhay-2108/beliefstate/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/abhay-2108/beliefstate/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/abhay-2108/beliefstate/releases/tag/v1.0.0

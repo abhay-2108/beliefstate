@@ -94,6 +94,17 @@ Fix contradictory belief detection for nested objects
 Update README with new integration examples
 ```
 
+### Changelog
+
+Update `CHANGELOG.md` under the `[Unreleased]` section using [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format. Add entries under the appropriate category:
+
+- **Added** for new features
+- **Changed** for changes in existing functionality
+- **Deprecated** for soon-to-be removed features
+- **Removed** for removed features
+- **Fixed** for any bug fixes
+- **Security** for vulnerability fixes
+
 ## Pull Request Process
 
 1. **Ensure quality** before submitting:

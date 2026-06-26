@@ -67,3 +67,10 @@ jobs:
       if: matrix.python-version == '3.12'
       run: |
         pytest --cov=beliefstate --cov-report=xml --cov-fail-under=55
+
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.12'
+      uses: codecov/codecov-action@v4
+      with:
+        files: coverage.xml
+        fail_ci_if_error: false

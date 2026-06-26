@@ -27,7 +27,7 @@ jobs:
         python -m pip install -e ".[openai,anthropic,ollama,litellm,redis,langchain,llamaindex,fastapi,flask]" || true
 
     - name: Run Ruff Linter
-      run: ruff check .
+      run: ruff check --output-format=github .
 
     - name: Run Ruff Formatter Check
       run: ruff format --check .

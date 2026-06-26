@@ -9,7 +9,8 @@
   <a href="https://pypi.org/project/beliefstate/"><img src="https://img.shields.io/pypi/v/beliefstate?color=blue" alt="PyPI"></a>
   <a href="https://github.com/abhay-2108/beliefstate/blob/main/LICENSE"><img src="https://img.shields.io/github/license/abhay-2108/beliefstate" alt="License"></a>
   <a href="https://pypi.org/project/beliefstate/"><img src="https://img.shields.io/pypi/pyversions/beliefstate" alt="Python"></a>
-  <a href="https://github.com/abhay-2108/beliefstate/actions"><img src="https://img.shields.io/badge/tests-298%20passing-brightgreen" alt="Tests"></a>
+  <a href="https://github.com/abhay-2108/beliefstate/actions/workflows/ci.yml"><img src="https://github.com/abhay-2108/beliefstate/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/abhay-2108/beliefstate/actions/workflows/lint.yml"><img src="https://github.com/abhay-2108/beliefstate/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
   <a href="https://abhay-2108.github.io/beliefstate/"><img src="https://img.shields.io/badge/docs-online-brightgreen" alt="Docs"></a>
 </p>
 
@@ -83,6 +84,7 @@ pip install "beliefstate[anthropic]"      # Anthropic adapter
 pip install "beliefstate[gemini]"         # Gemini adapter
 pip install "beliefstate[ollama]"         # Ollama adapter (local)
 pip install "beliefstate[litellm]"        # LiteLLM (100+ providers)
+pip install "beliefstate[local]"          # Local embeddings (sentence-transformers)
 pip install "beliefstate[redis]"          # Redis store
 pip install "beliefstate[postgres]"       # PostgreSQL store
 pip install "beliefstate[langchain]"      # LangChain integration
@@ -137,6 +139,8 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 This project follows a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to uphold it.
 
 For security vulnerabilities, please see our [Security Policy](SECURITY.md).
+
+For version history, see the [Changelog](CHANGELOG.md).
 
 ---
 

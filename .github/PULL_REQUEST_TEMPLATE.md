@@ -28,3 +28,4 @@
 - [ ] I have added tests that prove my fix is effective or my feature works
 - [ ] All new and existing tests pass (`pytest`)
 - [ ] I have updated documentation if needed
+- [ ] I have added an entry to `CHANGELOG.md` under `[Unreleased]`
