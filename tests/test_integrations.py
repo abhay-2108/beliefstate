@@ -192,8 +192,6 @@ async def test_llamaindex_callback_handler():
     assert mock_tracker._session_turn_counters.get("session-llama-789") == 1
     mock_tracker._dispatch.assert_called_once()
 
-    # _dispatch receives a coroutine from _track_background
-    coro_arg = mock_tracker._dispatch.call_args[0][0]
     # _track_background was called to produce that coroutine
     mock_tracker._track_background.assert_called_once()
     tb_args = mock_tracker._track_background.call_args[0]
@@ -312,8 +310,6 @@ async def test_observe_run_polling_and_dispatch():
     assert mock_tracker._session_turn_counters.get("session-openai-999") == 1
     mock_tracker._dispatch.assert_called_once()
 
-    # _dispatch receives a coroutine from _track_background
-    coro_arg = mock_tracker._dispatch.call_args[0][0]
     # _track_background was called to produce that coroutine
     mock_tracker._track_background.assert_called_once()
     tb_args = mock_tracker._track_background.call_args[0]
