@@ -20,8 +20,8 @@ import asyncio
 import time
 import json
 import os
-from datetime import datetime
-from typing import Optional
+import threading
+
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -122,7 +122,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Async helper ───────────────────────────────────────────────────────────────
-import threading
 
 _bg_loop = None
 _bg_thread = None
@@ -840,7 +839,6 @@ with tab_tests:
         # ── Test 3: Belief Store Write + Read ─────────────────────────────────
         test_name = "Belief Store Write & Read"
         try:
-            from beliefstate import Belief
             from beliefstate.call import LLMCall, LLMResponse
 
             test_sid = "auto-test-write-read"
@@ -851,7 +849,7 @@ with tab_tests:
             await asyncio.sleep(0.3)
 
             beliefs = await tracker.get_beliefs(session_id=test_sid)
-            found = any(
+            assert any(
                 "python" in str(getattr(b, "value", "")).lower()
                 for b in beliefs
             )
