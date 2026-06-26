@@ -28,7 +28,7 @@ What actually happened. Include error messages, tracebacks, or logs if applicabl
 
 - **OS**: [e.g., Windows 11, Ubuntu 22.04, macOS 14]
 - **Python version**: [e.g., 3.12.0]
-- **beliefstate version**: [e.g., 1.0.2]
+- **beliefstate version**: [e.g., 1.1.0]
 - **Relevant dependencies**: [e.g., openai 1.30.0, fastapi 0.111.0]
 
 ## Additional Context

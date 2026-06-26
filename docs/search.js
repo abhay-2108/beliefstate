@@ -281,7 +281,7 @@ const searchIndex = [
     category: "HELP & API",
     title: "Changelog",
     url: "reference.html#changelog",
-    desc: "Release history of beliefstate (v1.0.2 Postgres/Streaming, v1.0.1 Pronoun mapping, v1.0.0 Concurrency locks)."
+    desc: "Release history of beliefstate (v1.1.0 OSS hardening, v1.0.2 Postgres/Streaming, v1.0.1 Pronoun mapping, v1.0.0 Concurrency locks)."
   }
 ];
 

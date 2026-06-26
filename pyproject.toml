@@ -1,6 +1,6 @@
 [project]
 name = "beliefstate"
-version = "1.0.2"
+version = "1.1.0"
 description = "A sidecar belief state tracker for LLM agents to detect contradictions and maintain persistent facts."
 readme = "README.md"
 requires-python = ">=3.10"

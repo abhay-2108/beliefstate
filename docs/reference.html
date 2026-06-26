@@ -1916,6 +1916,48 @@ text = <span class="c-fn">summary_for_prompt</span>(beliefs, max_beliefs=<span c
           </p>
 
           <div class="changelog-timeline">
+            <!-- ENTRY: v1.1.0 -->
+            <div class="changelog-entry">
+              <div class="changelog-meta">
+                <span class="badge accent">v1.1.0</span>
+                <span class="changelog-date">2026-06-26</span>
+                <span class="badge green">Minor</span>
+              </div>
+              <h3>v1.1.0 — Current</h3>
+              <div class="changelog-changes">
+                <div class="change-group added">
+                  <span class="change-label added">Added</span>
+                  <ul>
+                    <li>Open-source community files: CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md</li>
+                    <li>GitHub issue templates, PR template, CODEOWNERS, Dependabot</li>
+                    <li>Pre-commit hooks (ruff + mypy) and .editorconfig</li>
+                    <li>CHANGELOG.md with Keep a Changelog format</li>
+                    <li>Dynamic CI/lint badges in README</li>
+                    <li>Codecov integration in CI workflow</li>
+                  </ul>
+                </div>
+                <div class="change-group changed">
+                  <span class="change-label changed">Changed</span>
+                  <ul>
+                    <li>Split CI and lint workflows for faster feedback</li>
+                    <li>Hardened store backends: lowercase normalization, conversation_id in field keys</li>
+                    <li>Pin third-party GitHub Actions to specific versions</li>
+                    <li>pyproject.toml: added keywords, fixed Documentation URL</li>
+                  </ul>
+                </div>
+                <div class="change-group fixed">
+                  <span class="change-label fixed">Fixed</span>
+                  <ul>
+                    <li>LlamaIndex callback handler test (mock import ordering)</li>
+                    <li>Unused mypy type: ignore comments in integrations</li>
+                    <li>FastAPI get_session_id guarded behind HAS_FASTAPI import check</li>
+                    <li>PostgreSQL get_by_key/remove_belief lowercase normalization</li>
+                    <li>Redis/Memory store field key includes conversation_id</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
             <!-- ENTRY: v1.0.2 -->
             <div class="changelog-entry">
               <div class="changelog-meta">
@@ -1923,7 +1965,7 @@ text = <span class="c-fn">summary_for_prompt</span>(beliefs, max_beliefs=<span c
                 <span class="changelog-date">2026-06-25</span>
                 <span class="badge default">Patch</span>
               </div>
-              <h3>v1.0.2 — Current</h3>
+              <h3>v1.0.2</h3>
               <div class="changelog-changes">
                 <div class="change-group fixed">
                   <span class="change-label fixed">Fixed</span>
