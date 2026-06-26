@@ -230,17 +230,14 @@ class TestRecoverJsonFromResponse:
 
     def test_layer4_smart_quotes(self):
         text = "[\u201c\u201d]"  # Smart quotes with empty content
-        # This may or may not parse depending on smart quote handling
         result = recover_json_from_response(text)
-        # Just verify it doesn't crash
+        # Smart quotes may or may not parse; just verify no crash
         assert result is None or isinstance(result, list)
 
     def test_layer5_truncated_json_with_trailing_comma(self):
         # Has both brackets, but trailing comma makes it invalid — Layer 5 handles this
         text = '[{"subject": "USER", "predicate": "likes", "value": "Python"},]'
         result = recover_json_from_response(text)
-        # Layer 3 extracts the substring, direct parse may handle trailing comma
-        # depending on json parser — just verify it doesn't crash
         if result is not None:
             assert isinstance(result, list)
 

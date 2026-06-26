@@ -36,7 +36,8 @@ class RedisStore(Store):
                 "redis package is not installed. Run `pip install redis`"
             )
 
-        field = f"{(belief.subject or '').lower()}::{(belief.predicate or '').lower()}"
+        cid = belief.conversation_id or ""
+        field = f"{(belief.subject or '').lower()}::{(belief.predicate or '').lower()}::{cid}"
         await self._client.hset(
             self._get_key(session_id), field, belief.model_dump_json()
         )
@@ -130,7 +131,8 @@ class RedisStore(Store):
                 "redis package is not installed. Run `pip install redis`"
             )
 
-        field = f"{subject.lower()}::{predicate.lower()}"
+        cid = conversation_id or ""
+        field = f"{subject.lower()}::{predicate.lower()}::{cid}"
         await self._client.hdel(self._get_key(session_id), field)
 
     async def update_belief(self, session_id: str, belief: Belief) -> None:

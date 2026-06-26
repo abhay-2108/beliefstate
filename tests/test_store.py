@@ -80,7 +80,7 @@ async def test_redis_store_mock():
     mock_client.hset.assert_called_once()
     args, _ = mock_client.hset.call_args
     assert args[0] == "beliefstate:session:session_123"
-    assert args[1] == "redis_key::has"
+    assert args[1] == "redis_key::has::"
 
     # Mock hgetall
     payload = b.model_dump_json()

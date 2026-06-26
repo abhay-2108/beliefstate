@@ -12,7 +12,6 @@ from beliefstate.tracker import (
     calculate_staleness_score,
     estimate_tokens,
     _detect_adapter,
-    _get_session_lock,
     _ensure_aware,
 )
 
@@ -100,18 +99,6 @@ class TestCalculateStalenessScore:
         b.confidence = 0.8
         score = calculate_staleness_score(b)
         assert score == pytest.approx(0.8, abs=0.01)
-
-
-class TestGetSessionLock:
-    def test_same_session_same_lock(self):
-        lock1 = _get_session_lock("s1")
-        lock2 = _get_session_lock("s1")
-        assert lock1 is lock2
-
-    def test_different_sessions_different_locks(self):
-        lock1 = _get_session_lock("locktest_a")
-        lock2 = _get_session_lock("locktest_b")
-        assert lock1 is not lock2
 
 
 # ── Adapter auto-detection ───────────────────────────────────────────────

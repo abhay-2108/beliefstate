@@ -1,9 +1,6 @@
-import logging
 from typing import Any
 from beliefstate.tracker import session_context
 from beliefstate.integrations.common import IntegrationLogger, validate_session_id
-
-logger = logging.getLogger(__name__)
 
 
 class BeliefTrackerASGIMiddleware:

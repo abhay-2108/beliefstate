@@ -69,7 +69,7 @@ flask = [
     "flask>=2.2.0",
 ]
 all = [
-    "beliefstate[openai,anthropic,gemini,ollama,litellm,local,redis,langchain,llamaindex,fastapi,flask]",
+    "beliefstate[openai,anthropic,gemini,ollama,litellm,local,redis,postgres,langchain,llamaindex,fastapi,flask]",
 ]
 dev = [
     "pytest>=7.0",

@@ -336,7 +336,7 @@ with st.sidebar:
                     store_kwargs = {"db_path": db_path}
 
                 config = TrackerConfig(
-                    store_type="sqlite" if store_type == "sqlite" else "sqlite",
+                    store_type="sqlite" if store_type == "sqlite" else "memory",
                     store_kwargs=store_kwargs
                     if store_type == "sqlite"
                     else {"db_path": ":memory:"},

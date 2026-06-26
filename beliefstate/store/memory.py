@@ -46,7 +46,8 @@ class InMemoryBeliefStore(Store):
         if session_id not in self._beliefs:
             self._beliefs[session_id] = OrderedDict()
 
-        field = f"{(belief.subject or '').lower()}::{(belief.predicate or '').lower()}"
+        cid = belief.conversation_id or ""
+        field = f"{(belief.subject or '').lower()}::{(belief.predicate or '').lower()}::{cid}"
         belief_size = self._estimate_belief_size(belief)
 
         if field in self._beliefs[session_id]:
@@ -108,7 +109,8 @@ class InMemoryBeliefStore(Store):
         """Retrieve a single belief by its composite key."""
         if session_id not in self._beliefs:
             return None
-        field = f"{subject.lower()}::{predicate.lower()}"
+        cid = conversation_id or ""
+        field = f"{subject.lower()}::{predicate.lower()}::{cid}"
         return self._beliefs[session_id].get(field)
 
     async def upsert(self, belief: Belief) -> bool:
@@ -137,7 +139,8 @@ class InMemoryBeliefStore(Store):
         if session_id not in self._beliefs:
             return
 
-        field = f"{subject.lower()}::{predicate.lower()}"
+        cid = conversation_id or ""
+        field = f"{subject.lower()}::{predicate.lower()}::{cid}"
         if field in self._beliefs[session_id]:
             belief = self._beliefs[session_id][field]
             belief_size = self._estimate_belief_size(belief)

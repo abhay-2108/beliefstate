@@ -205,11 +205,8 @@ async def test_belief_tracker_initialization():
 
 
 def test_package_version():
-    """Test that package has a version."""
+    """Test that package has core attributes."""
     import beliefstate
-
-    # Check that package has metadata
-    assert hasattr(beliefstate, "__version__") or True  # May not be set initially
 
     # Check that core modules exist
     assert hasattr(beliefstate, "BeliefTracker")
@@ -235,3 +232,44 @@ def test_optional_imports():
     # We can check without failing
     assert isinstance(has_fastapi, bool)
     assert isinstance(has_flask, bool)
+
+
+class TestAdapterImportsOptional:
+    """Adapter symbols should be importable (but may be None if SDK missing)."""
+
+    def test_openai_adapter_importable(self):
+        from beliefstate import OpenAIAdapter
+
+        # May be None if openai not installed — that's fine
+        assert OpenAIAdapter is None or callable(OpenAIAdapter)
+
+    def test_anthropic_adapter_importable(self):
+        from beliefstate import AnthropicAdapter
+
+        assert AnthropicAdapter is None or callable(AnthropicAdapter)
+
+    def test_gemini_adapter_importable(self):
+        from beliefstate import GeminiAdapter
+
+        assert GeminiAdapter is None or callable(GeminiAdapter)
+
+    def test_ollama_adapter_importable(self):
+        from beliefstate import OllamaAdapter
+
+        assert OllamaAdapter is None or callable(OllamaAdapter)
+
+    def test_litellm_adapter_importable(self):
+        from beliefstate import LiteLLMAdapter
+
+        assert LiteLLMAdapter is None or callable(LiteLLMAdapter)
+
+
+class TestAllExports:
+    """Every entry in __all__ should be importable (possibly None)."""
+
+    def test_all_entries_accessible(self):
+        import beliefstate
+
+        for name in beliefstate.__all__:
+            val = getattr(beliefstate, name, "__MISSING__")
+            assert val != "__MISSING__", f"{name} listed in __all__ but not accessible"

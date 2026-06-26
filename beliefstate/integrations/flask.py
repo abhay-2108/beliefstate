@@ -1,4 +1,3 @@
-import logging
 from typing import Optional, Any
 
 try:
@@ -11,8 +10,6 @@ except ImportError:
 from beliefstate.tracker import session_context
 from beliefstate.integrations.wsgi import BeliefTrackerWSGIMiddleware
 from beliefstate.integrations.common import IntegrationLogger, validate_session_id
-
-logger = logging.getLogger(__name__)
 
 
 class FlaskBeliefTrackerMiddleware(BeliefTrackerWSGIMiddleware):

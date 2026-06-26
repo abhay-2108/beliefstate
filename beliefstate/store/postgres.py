@@ -368,8 +368,8 @@ class PostgreSQLStore(Store):
         Returns True if the belief was written, False if discarded (stale write).
         """
         existing = await self.get_by_key(
-            belief.subject,
-            belief.predicate,
+            belief.subject.lower(),
+            belief.predicate.lower(),
             belief.session_id or "",
             belief.conversation_id or "",
         )
@@ -388,6 +388,8 @@ class PostgreSQLStore(Store):
         """Retrieve a single belief by its composite key."""
         pool = await self._get_pool()
         cid = conversation_id or ""
+        sub = subject.lower()
+        pred = predicate.lower()
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
                 """
@@ -398,8 +400,8 @@ class PostgreSQLStore(Store):
             """,
                 session_id,
                 cid,
-                subject,
-                predicate,
+                sub,
+                pred,
             )
 
         if row is None:
@@ -455,8 +457,8 @@ class PostgreSQLStore(Store):
                 "DELETE FROM beliefs WHERE session_id = $1 AND conversation_id = $2 AND subject = $3 AND predicate = $4",
                 session_id,
                 cid,
-                subject,
-                predicate,
+                subject.lower(),
+                predicate.lower(),
             )
 
     async def update_belief(self, session_id: str, belief: Belief) -> None:
