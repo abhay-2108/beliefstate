@@ -166,6 +166,9 @@ def _detect_adapter(result: Any) -> ProviderAdapter:
         async def get_embeddings(self, texts: list[str]) -> list[list[float]]:
             raise NotImplementedError("Generic adapter cannot generate embeddings.")
 
+        def inject_context(self, context_prompt: str, *args: Any, **kwargs: Any) -> Any:
+            return kwargs
+
         async def health_check(self) -> bool:
             return False
 

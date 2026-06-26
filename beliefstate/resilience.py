@@ -207,6 +207,9 @@ class ResilientAdapterWrapper(ProviderAdapter):
             ),
         )
 
+    def inject_context(self, context_prompt: str, *args: Any, **kwargs: Any) -> Any:
+        return self.adapter.inject_context(context_prompt, *args, **kwargs)
+
     async def _execute_with_resilience(
         self,
         operation: Callable[[], Coroutine[Any, Any, Any]],
