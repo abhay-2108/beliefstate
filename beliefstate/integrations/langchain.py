@@ -102,8 +102,12 @@ class BeliefTrackerLangchainCallback(AsyncCallbackHandler):
         llm_response = LLMResponse(text=text, raw_response=raw)
 
         session_id = session_context.get()
-        current_turn = self.tracker._session_turn_counters.get(session_id, 0) + 1
-        self.tracker._session_turn_counters[session_id] = current_turn
+        from beliefstate.tracker import _get_session_lock
+
+        lock = _get_session_lock(session_id)
+        async with lock:
+            current_turn = self.tracker._session_turn_counters.get(session_id, 0) + 1
+            self.tracker._session_turn_counters[session_id] = current_turn
 
         if self.tracker.config.enable_background_tasks:
             self.tracker._dispatch(

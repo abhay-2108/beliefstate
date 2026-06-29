@@ -47,7 +47,7 @@
     --accent-lo:  rgba(124,111,235,0.12);
     --accent-hi:  #9D93F0;
     --green:      #34D399;
-    --green-lo:   rgba(52,211,235,0.10);
+    --green-lo:   rgba(52,211,153,0.10);
     --red:        #F87171;
     --red-lo:     rgba(248,113,113,0.10);
     --amber:      #F59E0B;
@@ -87,19 +87,6 @@
     background: rgba(10,10,11,0.85);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
-  }
-
-  .nav-hamburger {
-    display: none;
-    padding: 8px;
-    cursor: pointer;
-    color: var(--text-2);
-  }
-
-  @media (max-width: 768px) {
-    .nav-hamburger { display: block; }
-    .nav-links { display: none; }
-    .sidebar { display: none; }
   }
 
   .nav-logo {
@@ -1133,7 +1120,8 @@
       <a href="#tracker-config">TrackerConfig</a>
       <a href="#store-settings">Store Settings</a>
       <a href="#detection-settings">Detection Settings</a>
-      <a href="#resolution-settings">Resolution Settings</a>
+      <a href="#resolution-settings">Resolution Strategy</a>
+      <a href="#injection-settings">Context Injection Controls</a>
       <a href="#staleness-settings">Staleness Settings</a>
       <a href="#injection-settings">Injection Settings</a>
       <a href="#retry-settings">Retry Settings</a>
@@ -1261,7 +1249,7 @@ config = <span class="c-fn">TrackerConfig</span>(
     enable_belief_ttl=<span class="c-kw">False</span>,
     enable_staleness_scoring=<span class="c-kw">True</span>,
     enable_token_aware_injection=<span class="c-kw">True</span>,
-    belief_budget_tokens=<span class="c-str">500</span>
+    belief_budget_tokens=<span class="c-str">300</span>
 )</div>
           </div>
 
@@ -1284,7 +1272,7 @@ config = <span class="c-fn">TrackerConfig</span>(
                   <td><code>store_type</code></td>
                   <td><span class="type-label">str</span></td>
                   <td><span class="default-label">"sqlite"</span></td>
-                  <td>The type of storage database instance. Supported options: <code>"sqlite"</code>, <code>"redis"</code>, or <code>"memory"</code>.</td>
+                  <td>The type of storage database backend. Supported options: <code>"sqlite"</code>, <code>"redis"</code>, or <code>"postgres"</code>.</td>
                 </tr>
                 <tr>
                   <td><code>store_kwargs</code></td>
@@ -1344,6 +1332,89 @@ config = <span class="c-fn">TrackerConfig</span>(
             <div class="callout-label">💡 Tip</div>
             <p>
               Raise the <code>contradiction_threshold</code> to 0.80 to restrict false positives. Lower the <code>similarity_threshold</code> to 0.75 to let more candidate pairs reach the NLI judge and catch more subtle contradictions.
+            </p>
+          </div>
+
+          <!-- Resolution Strategy -->
+          <h3 id="resolution-settings">Resolution Strategy</h3>
+          <p>Controls how contradictions between new and existing beliefs are handled when a conflict is detected.</p>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Type</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>resolution_strategy</code></td>
+                  <td><span class="type-label">str</span></td>
+                  <td><span class="default-label">"overwrite"</span></td>
+                  <td>How contradictions are resolved: <code>"overwrite"</code> replaces old belief, <code>"keep_old"</code> discards new belief, <code>"raise"</code> surfaces an error.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Strategy behaviors:</p>
+          <ul>
+            <li><strong><code>overwrite</code></strong> (default) — The new belief replaces the old one. No conflict note is generated.</li>
+            <li><strong><code>keep_old</code></strong> — The new belief is discarded. A <code>[BELIEF CONFLICT — kept old]</code> note is appended to the response.</li>
+            <li><strong><code>raise</code></strong> — A <code>ValueError</code> is raised. In background tasks, the error is buffered and accessible via <code>get_pending_conflicts()</code>.</li>
+          </ul>
+
+          <div class="callout important">
+            <div class="callout-label">Note</div>
+            <p>
+              Beliefs with <code>belief_type="update"</code> always overwrite existing beliefs regardless of the resolution strategy. The strategy only applies to <code>belief_type="assertion"</code> conflicts.
+            </p>
+          </div>
+
+          <!-- Context Injection Controls -->
+          <h3 id="injection-settings">Context Injection Controls</h3>
+          <p>Controls which beliefs are included when injecting context into system prompts.</p>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Type</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>exclude_sources</code></td>
+                  <td><span class="type-label">list[str]</span></td>
+                  <td><span class="default-label">["assistant"]</span></td>
+                  <td>Sources to exclude from context injection. Default excludes assistant-generated beliefs.</td>
+                </tr>
+                <tr>
+                  <td><code>min_injection_confidence</code></td>
+                  <td><span class="type-label">float</span></td>
+                  <td><span class="default-label">0.80</span></td>
+                  <td>Minimum confidence required for a belief to be included in injected context.</td>
+                </tr>
+                <tr>
+                  <td><code>include_hypothetical_in_context</code></td>
+                  <td><span class="type-label">bool</span></td>
+                  <td><span class="default-label">False</span></td>
+                  <td>When True, hypothetical beliefs (<code>is_hypothetical=True</code>) are included in injected context.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout tip">
+            <div class="callout-label">Tip</div>
+            <p>
+              By default, only user-sourced beliefs with confidence ≥ 0.80 are injected. This prevents low-confidence or assistant-generated beliefs from polluting the system prompt.
             </p>
           </div>
 
@@ -1686,7 +1757,7 @@ Attempt 5: 30.0s delay (capped at retry_max_wait)</div>
                 <tr>
                   <td><code>belief_budget_tokens</code></td>
                   <td><span class="type-label">int</span></td>
-                  <td><span class="default-label">500</span></td>
+                  <td><span class="default-label">300</span></td>
                   <td>Max tokens allocated to belief context in prompts. Estimated using 1 token ≈ 4 characters.</td>
                 </tr>
               </tbody>
@@ -1960,6 +2031,8 @@ Output JSON: {"relationship": "contradiction|entailment|neutral", "score": float
           <li><a href="#tracker-config" class="otp-link">TrackerConfig</a></li>
           <li><a href="#store-settings" class="otp-link indent">Store Settings</a></li>
           <li><a href="#detection-settings" class="otp-link indent">Detection Settings</a></li>
+          <li><a href="#resolution-settings" class="otp-link indent">Resolution Strategy</a></li>
+          <li><a href="#injection-settings" class="otp-link indent">Context Injection Controls</a></li>
           <li><a href="#resilience-settings" class="otp-link indent">Resilience Settings</a></li>
           <li><a href="#task-settings" class="otp-link indent">Task Settings</a></li>
           <li><a href="#internal-provider" class="otp-link indent">Internal Provider</a></li>

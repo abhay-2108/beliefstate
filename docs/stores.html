@@ -24,22 +24,6 @@
     background: rgba(255, 255, 255, 0.2);
   }
 
-/* Custom scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
-    border-radius: 3px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-
   *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -59,7 +43,7 @@
     --accent-lo:  rgba(124,111,235,0.12);
     --accent-hi:  #9D93F0;
     --green:      #34D399;
-    --green-lo:   rgba(52,211,235,0.10);
+    --green-lo:   rgba(52,211,153,0.10);
     --red:        #F87171;
     --red-lo:     rgba(248,113,113,0.10);
     --amber:      #F59E0B;
@@ -820,6 +804,9 @@
     .two-col-layout {
       grid-template-columns: 1fr;
     }
+    .store-cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
     .param-table {
       font-size: 12px;
     }
@@ -932,6 +919,9 @@
     .badge {
       font-size: 10px;
       padding: 1px 6px;
+    }
+    .store-cards {
+      grid-template-columns: 1fr;
     }
   }
 

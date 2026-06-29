@@ -237,8 +237,8 @@ async def test_judge_json_decode_error_handled():
 
 # ─── Resolver keep_old no phantom escalation ───
 @pytest.mark.asyncio
-async def test_resolver_keep_old_no_escalation():
-    """keep_old strategy must not generate ASK conflict notes."""
+async def test_resolver_keep_old_generates_feedback():
+    """keep_old strategy must generate a conflict note so the user gets feedback."""
     from beliefstate.resolver import BeliefResolver
     from beliefstate.store.memory import InMemoryBeliefStore
 
@@ -266,7 +266,10 @@ async def test_resolver_keep_old_no_escalation():
 
     await resolver.resolve("s1", [(old_b, new_b, 0.9, "test reason")])
     conflicts = resolver.pop_pending_conflicts("s1")
-    assert len(conflicts) == 0
+    assert len(conflicts) == 1
+    assert "kept old" in conflicts[0]
+    assert "A" in conflicts[0]
+    assert "B" in conflicts[0]
 
 
 # ─── Shutdown closes store ───

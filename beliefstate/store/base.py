@@ -97,9 +97,18 @@ def summary_for_prompt(
 ) -> str:
     """Format beliefs into a structured, category-grouped summary for prompt injection.
 
-    Groups beliefs by category, excludes hypotheticals from main injection,
-    and appends speculative beliefs in a separate section.
+    Deduplicates by (subject, predicate) keeping only the latest belief per key.
+    Groups beliefs by category and excludes superseded beliefs.
     """
+    # B5: Deduplicate by (subject, predicate) keeping highest turn (latest)
+    deduped: Dict[tuple, Belief] = {}
+    for b in beliefs:
+        key = (b.subject.lower(), b.predicate.lower())
+        existing = deduped.get(key)
+        if existing is None or b.turn > existing.turn:
+            deduped[key] = b
+    beliefs = list(deduped.values())
+
     real = [b for b in beliefs if not getattr(b, "is_hypothetical", False)]
     speculative = [b for b in beliefs if getattr(b, "is_hypothetical", False)]
 

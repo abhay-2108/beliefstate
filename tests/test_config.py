@@ -63,7 +63,7 @@ class TestTrackerConfigDefaults:
     def test_default_token_aware_injection(self):
         c = TrackerConfig()
         assert c.enable_token_aware_injection is True
-        assert c.belief_budget_tokens == 500
+        assert c.belief_budget_tokens == 300
 
 
 class TestTrackerConfigOverrides:

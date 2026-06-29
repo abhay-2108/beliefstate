@@ -366,6 +366,11 @@ class SQLiteStore(Store):
         else:
             emb = []
 
+        def _ensure_aware(dt: datetime) -> datetime:
+            if dt.tzinfo is None:
+                return dt.replace(tzinfo=timezone.utc)
+            return dt
+
         return Belief(
             subject=r["subject"],
             predicate=r["predicate"],
@@ -380,10 +385,12 @@ class SQLiteStore(Store):
             embedding_dim=r["embedding_dim"] or 0,
             belief_type=r["belief_type"] or "assertion",
             is_hypothetical=bool(r["is_hypothetical"]),
-            created_at=datetime.fromisoformat(r["created_at"])
+            created_at=_ensure_aware(datetime.fromisoformat(r["created_at"]))
             if r["created_at"]
             else datetime.now(timezone.utc),
-            last_referenced_at=datetime.fromisoformat(r["last_referenced_at"])
+            last_referenced_at=_ensure_aware(
+                datetime.fromisoformat(r["last_referenced_at"])
+            )
             if r["last_referenced_at"]
             else datetime.now(timezone.utc),
             session_id=r["session_id"],
@@ -445,6 +452,8 @@ class SQLiteStore(Store):
         """Retrieve a single belief by its composite key."""
         conn = await self._get_connection()
         cid = conversation_id or ""
+        subject = subject.lower()
+        predicate = predicate.lower()
 
         async with conn.execute(
             """

@@ -57,27 +57,27 @@ def normalize_dates(text: str) -> str:
 
     def replace_date_long(match: re.Match[str]) -> str:
         month_name = match.group(1).lower()
-        day = match.group(2).zfill(2)
+        day = re.sub(r"(st|nd|rd|th)", "", match.group(2)).zfill(2)
         year = match.group(3)
         month = months.get(month_name, "01")
         return f"{year}-{month}-{day}"
 
     text = re.sub(
-        r"(" + "|".join(months.keys()) + r")\s+(\d{1,2}),?\s+(\d{4})",
+        r"(" + "|".join(months.keys()) + r")\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})",
         replace_date_long,
         text,
         flags=re.IGNORECASE,
     )
 
     def replace_date_dmy(match: re.Match[str]) -> str:
-        day = match.group(1).zfill(2)
+        day = re.sub(r"(st|nd|rd|th)", "", match.group(1)).zfill(2)
         month_name = match.group(2).lower()
         year = match.group(3)
         month = months.get(month_name, "01")
         return f"{year}-{month}-{day}"
 
     text = re.sub(
-        r"(\d{1,2})\s+(" + "|".join(months.keys()) + r")\s+(\d{4})",
+        r"(\d{1,2})(?:st|nd|rd|th)?\s+(" + "|".join(months.keys()) + r")\s+(\d{4})",
         replace_date_dmy,
         text,
         flags=re.IGNORECASE,

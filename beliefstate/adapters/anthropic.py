@@ -133,7 +133,14 @@ class AnthropicAdapter(ProviderAdapter):
             instruction = f"\n\nIMPORTANT: You must return a valid JSON object or JSON array conforming strictly to the following JSON Schema: {schema_json}. Do NOT include any explanations, markdown code blocks, or preamble in your response. Output only raw JSON."
             if messages:
                 last_m = messages[-1].copy()
-                last_m["content"] = last_m.get("content", "") + instruction
+                existing_content = last_m.get("content", "")
+                if isinstance(existing_content, list):
+                    # Anthropic API supports list content blocks
+                    last_m["content"] = existing_content + [
+                        {"type": "text", "text": instruction}
+                    ]
+                else:
+                    last_m["content"] = str(existing_content) + instruction
                 messages[-1] = last_m
             else:
                 messages.append({"role": "user", "content": instruction})

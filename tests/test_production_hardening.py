@@ -71,8 +71,8 @@ class TestPerSessionTurnCounters:
         # Simulate turns for different sessions
         tracker._session_turn_counters["session_a"] = 3
         tracker._session_turn_counters["session_b"] = 7
-        # turn_counter should return max
-        assert tracker.turn_counter == 7
+        # turn_counter now returns current session's value (not max)
+        assert tracker.turn_counter == 0  # default session has 0 turns
         # get_session_turn should return per-session value
         assert tracker.get_session_turn("session_a") == 3
         assert tracker.get_session_turn("session_b") == 7

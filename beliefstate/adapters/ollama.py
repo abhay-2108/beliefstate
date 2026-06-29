@@ -91,7 +91,12 @@ class OllamaAdapter(ProviderAdapter):
         if not host and not port:
             ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
             if "://" in ollama_host:
-                host = ollama_host
+                from urllib.parse import urlparse
+
+                parsed = urlparse(ollama_host)
+                host = parsed.hostname or "http://localhost"
+                if parsed.port:
+                    port = parsed.port
             else:
                 parts = ollama_host.split(":")
                 host = parts[0]

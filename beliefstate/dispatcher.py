@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 from typing import Any, Dict, Protocol, runtime_checkable
 from asyncio import Task as AsyncTask
 
@@ -9,6 +10,16 @@ from beliefstate.tracker import session_context
 logger = logging.getLogger(__name__)
 
 _global_tracker = None
+_global_tracker_lock = threading.Lock()
+
+
+def _log_task_error(task: asyncio.Task[None]) -> None:
+    """Log exceptions from fire-and-forget background tasks."""
+    if task.cancelled():
+        return
+    exc = task.exception()
+    if exc is not None:
+        logger.error(f"Background tracking task failed: {exc}", exc_info=exc)
 
 
 def register_global_tracker(tracker: Any) -> None:
@@ -26,18 +37,19 @@ def register_global_tracker(tracker: Any) -> None:
         register_global_tracker(tracker)
     """
     global _global_tracker
-    _global_tracker = tracker
+    with _global_tracker_lock:
+        _global_tracker = tracker
 
 
 def get_global_tracker() -> Any:
     """Retrieve the registered global tracker instance."""
-    global _global_tracker
-    if _global_tracker is None:
-        raise RuntimeError(
-            "Global BeliefTracker is not registered. "
-            "Please call `register_global_tracker(tracker)` in your worker startup script."
-        )
-    return _global_tracker
+    with _global_tracker_lock:
+        if _global_tracker is None:
+            raise RuntimeError(
+                "Global BeliefTracker is not registered. "
+                "Please call `register_global_tracker(tracker)` in your worker startup script."
+            )
+        return _global_tracker
 
 
 def execute_tracking_task(
@@ -197,11 +209,12 @@ class SyncDispatcher:
         try:
             loop = asyncio.get_running_loop()
             if loop.is_running():
-                loop.create_task(
+                task = loop.create_task(
                     tracker.track_async(
                         call.model_dump(), response.model_dump(), session_id, turn
                     )
                 )
+                task.add_done_callback(_log_task_error)
                 return
         except RuntimeError:
             pass

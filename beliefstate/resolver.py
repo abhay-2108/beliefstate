@@ -24,6 +24,7 @@ class BeliefResolver:
         self.strategy = strategy
         self.pending_conflicts: Dict[str, List[str]] = {}
         self.conflict_history: Dict[str, Dict[Tuple[str, str, str, str], int]] = {}
+        self._MAX_SESSIONS = 1000
 
     def _get_conflict_key(
         self, old_b: Belief, new_b: Belief
@@ -45,6 +46,16 @@ class BeliefResolver:
         """
         if not contradictions:
             return
+
+        # Evict oldest sessions if at capacity
+        while len(self.pending_conflicts) > self._MAX_SESSIONS:
+            oldest_sid = next(iter(self.pending_conflicts))
+            del self.pending_conflicts[oldest_sid]
+            self.conflict_history.pop(oldest_sid, None)
+        while len(self.conflict_history) > self._MAX_SESSIONS:
+            oldest_sid = next(iter(self.conflict_history))
+            del self.conflict_history[oldest_sid]
+            self.pending_conflicts.pop(oldest_sid, None)
 
         target_store = store or self.store
 
@@ -76,13 +87,22 @@ class BeliefResolver:
                 await target_store.add_belief(session_id, new_b)
 
             elif self.strategy == "keep_old":
+                note = f"[BELIEF CONFLICT — kept old] Previously stated: '{old_b.value}'. New assertion: '{new_b.value}' was discarded. Reason: {reason}."
+                if current_count == 0:
+                    self.pending_conflicts[session_id].append(note)
                 self.conflict_history[session_id][conflict_key] = current_count + 1
+                logger.info(
+                    f"Session {session_id}: keep_old — discarded '{new_b.value}', keeping '{old_b.value}'"
+                )
                 continue
 
             elif self.strategy == "raise":
-                raise ValueError(
-                    f"Contradiction detected: {old_b.value} vs {new_b.value} - {reason}"
+                error_msg = (
+                    f"Contradiction detected (strategy=raise): "
+                    f"'{old_b.value}' vs '{new_b.value}' — {reason}"
                 )
+                self.pending_conflicts[session_id].append(f"[RAISE] {error_msg}")
+                raise ValueError(error_msg)
 
             # Escalation logic: first time = ASK, repeat = BLOCK
             if current_count == 0:

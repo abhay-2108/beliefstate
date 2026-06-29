@@ -39,7 +39,7 @@ from beliefstate.adapters import OpenAIAdapter
 
 tracker = BeliefTracker(
     adapter=OpenAIAdapter(model="gpt-4o"),
-    config={"store_type": "sqlite", "store_kwargs": {"db_path": "beliefs.db"}}
+    config=TrackerConfig(store_type="sqlite", store_kwargs={"db_path": "beliefs.db"})
 )
 
 @tracker.wrap
@@ -48,7 +48,7 @@ async def chat(messages):
 
 tracker.set_session("user_123")
 await chat([{"role": "user", "content": "I live in Tokyo and work at Google."}])
-# BeliefState extracts: {subject: "user_123", predicate: "lives_in", value: "Tokyo"}
+# BeliefState extracts: {subject: "user", predicate: "lives_in", value: "Tokyo"}
 ```
 
 ---

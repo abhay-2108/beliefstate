@@ -70,7 +70,38 @@ def has_negation(text: str) -> bool:
         return True
     if "n't" in text_lower:
         return True
-    for token in NEGATION_TOKENS:
+    # Multi-word negation tokens: use substring match (no word boundaries)
+    _MULTI_WORD_NEGATION = {"no longer", "not any"}
+    for token in _MULTI_WORD_NEGATION:
+        if token in text_lower:
+            return True
+    # Single-word negation tokens: use word-boundary match
+    _SINGLE_WORD_NEGATION = {
+        "not",
+        "don't",
+        "doesn't",
+        "didn't",
+        "won't",
+        "can't",
+        "cannot",
+        "shouldn't",
+        "couldn't",
+        "wouldn't",
+        "never",
+        "no",
+        "none",
+        "nobody",
+        "nothing",
+        "nowhere",
+        "stopped",
+        "quit",
+        "unlike",
+        "isn't",
+        "aren't",
+        "wasn't",
+        "weren't",
+    }
+    for token in _SINGLE_WORD_NEGATION:
         pattern = r"\b" + re.escape(token) + r"\b"
         if re.search(pattern, text_lower):
             return True
@@ -183,7 +214,8 @@ class ContradictionDetector:
             if existing and normalize_value(existing.value) == normalize_value(
                 new_b.value
             ):
-                duplicates_to_skip.append(new_b)
+                if new_b not in duplicates_to_skip:
+                    duplicates_to_skip.append(new_b)
                 continue
 
             new_b_text = f"{new_b.predicate} {new_b.value}"

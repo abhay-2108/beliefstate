@@ -101,15 +101,21 @@ class RedisStore(Store):
         session_id: str,
         conversation_id: Optional[str] = None,
     ) -> Optional[Belief]:
-        """Retrieve a single belief by its composite key."""
-        beliefs = await self.get_beliefs(session_id, conversation_id)
-        for b in beliefs:
-            if (
-                b.subject.lower() == subject.lower()
-                and b.predicate.lower() == predicate.lower()
-            ):
-                return b
-        return None
+        """Retrieve a single belief by its composite key using direct hash lookup (O(1))."""
+        if not self._client:
+            raise RuntimeError(
+                "redis package is not installed. Run `pip install redis`"
+            )
+        cid = conversation_id or ""
+        field = f"{subject.lower()}::{predicate.lower()}::{cid}"
+        value_bytes = await self._client.hget(self._get_key(session_id), field)
+        if value_bytes is None:
+            return None
+        if isinstance(value_bytes, bytes):
+            value_str = value_bytes.decode("utf-8")
+        else:
+            value_str = value_bytes
+        return Belief.model_validate_json(value_str)
 
     async def upsert(self, belief: Belief) -> bool:
         """Insert or update a belief with turn-based optimistic concurrency.
@@ -178,13 +184,22 @@ class RedisStore(Store):
         await self._client.expire(key, ttl_seconds)
 
     async def get_session_ttl(self, session_id: str) -> Optional[int]:
+        """Return TTL in seconds for a session's key.
+
+        Returns:
+            TTL in seconds if key exists and has an expiry.
+            -1 if key exists but has no expiry set.
+            None if key does not exist.
+        """
         if not self._client:
             raise RuntimeError(
                 "redis package is not installed. Run `pip install redis`"
             )
         key = self._get_key(session_id)
         ttl = await self._client.ttl(key)
-        return ttl if ttl >= -1 else None
+        if ttl == -2:
+            return None  # Key does not exist
+        return ttl  # -1 (no expiry) or positive TTL
 
     async def get_audit_history(
         self,

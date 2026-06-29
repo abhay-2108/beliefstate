@@ -2,21 +2,35 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 DEFAULT_EXTRACT_PROMPT = """
-You are a precise fact extraction engine. Extract every factual claim
-that has been ESTABLISHED as true in this conversation — regardless of
-what domain or topic it falls into.
+You are a precise fact extraction engine. Extract ONLY facts that the USER
+explicitly stated. Do NOT extract facts the assistant mentioned, suggested,
+or provided as general knowledge.
 
-Extract facts about ANYTHING: people, technical systems, plans,
-decisions, constraints, budgets, tasks, preferences, locations,
-configurations — everything. Do not limit yourself to one domain.
+QUALITY OVER QUANTITY — target 1-3 beliefs per turn. Most turns yield 0-1
+beliefs. Only extract when the user shares a concrete, new piece of information.
+
+RULES — ONLY EXTRACT:
+  1. Facts the user personally declared about themselves, their project, or their team
+  2. Decisions the user made ("we're using X", "I prefer Y")
+  3. Updates where the user explicitly overrides a prior statement
+     ("actually, we switched to X", "no longer using Y")
+  4. Concrete numbers, names, dates, or constraints the user provided
+
+RULES — DO NOT EXTRACT:
+  - Facts the assistant stated, suggested, or recommended
+  - General knowledge about tools, frameworks, or technologies
+    (e.g. "Redis is an in-memory store" — the LLM already knows this)
+  - Opinions or assessments from the assistant ("that's a solid choice")
+  - Hypothetical suggestions ("you could use X", "consider Y")
+  - Restating or rephrasing what was already established
+  - Team role assignments the assistant inferred (unless user confirmed)
 
 STEP 1 — IDENTIFY THE SUBJECT
 Use the most specific, resolvable name. Never a pronoun.
   1. Actual name if stated: "Raj", "FastAPI", "the auth module"
   2. Role/type if name unknown: "Database", "Backend Framework"
   3. First-person user claims → "USER"
-  4. Assistant self-claims → "ASSISTANT"
-  5. Pronouns (it, they, that) → resolve to most recent entity.
+  4. Pronouns (it, they, that) → resolve to most recent entity.
      If unresolvable → OMIT the belief entirely.
 
 STEP 2 — NORMALISE THE VALUE
@@ -53,28 +67,6 @@ STEP 3 — CLASSIFY
   source_quote: verbatim excerpt from original text, MAX 100 chars.
     Trim to the key phrase. Never the full sentence.
 
-EXTRACT ALL of these when present:
-  IDENTITY: names, locations, roles, preferences, biographical facts
-  TECHNICAL: frameworks, databases, languages, tools, APIs, architecture
-    patterns, deployment targets, version constraints, config values,
-    coding standards, testing strategies, port numbers, env vars
-  PLANNING: who owns what, deadlines, task status, dependencies,
-    blockers, priorities, milestones, decisions made
-  CONSTRAINTS: budget, performance, security, compliance requirements,
-    non-negotiables, "must", "cannot", "required", "forbidden"
-  STATE: current status of features, what is built vs planned,
-    what has been decided vs open, what was tried and failed
-
-DO NOT EXTRACT:
-  - Pure questions not yet answered
-  - Ideas not committed to ("we could maybe...")
-  - Pleasantries and social exchange
-  - Code output itself (function bodies, SQL, config files)
-    BUT DO extract the decision that produced the code:
-    "we will use async SQLAlchemy" is extractable;
-    the SQLAlchemy code block is not.
-  - Restating what was already said with no new information
-
 OUTPUT FORMAT — return ONLY valid JSON array, no markdown, no explanation.
 If no facts present, return [].
 [
@@ -92,22 +84,24 @@ If no facts present, return [].
 ]
 
 EXAMPLES:
-Input: User: "I am Raj. Budget is $5k. Use FastAPI and PostgreSQL. Assign auth to Priya. If scaling issues, might add Redis."
+Input: User: "I am Raj. Budget is $5k. Use FastAPI and PostgreSQL."
 Output:
 [
   {{"subject":"USER","predicate":"name is","value":"Raj","confidence":0.99,"belief_type":"assertion","is_hypothetical":false,"category":"identity","source":"user","source_quote":"I am Raj"}},
   {{"subject":"Project","predicate":"budget is","value":"USD 5000","confidence":0.97,"belief_type":"assertion","is_hypothetical":false,"category":"constraint","source":"user","source_quote":"Budget is $5k"}},
   {{"subject":"Backend Framework","predicate":"is","value":"FastAPI","confidence":0.97,"belief_type":"assertion","is_hypothetical":false,"category":"technical","source":"user","source_quote":"Use FastAPI"}},
-  {{"subject":"Database","predicate":"is","value":"PostgreSQL","confidence":0.97,"belief_type":"assertion","is_hypothetical":false,"category":"technical","source":"user","source_quote":"and PostgreSQL"}},
-  {{"subject":"Auth Module","predicate":"assigned to","value":"Priya","confidence":0.95,"belief_type":"assertion","is_hypothetical":false,"category":"planning","source":"user","source_quote":"Assign auth to Priya"}},
-  {{"subject":"Cache Layer","predicate":"might be added for","value":"scaling issues","confidence":0.60,"belief_type":"assertion","is_hypothetical":true,"category":"technical","source":"user","source_quote":"might add Redis"}}
+  {{"subject":"Database","predicate":"is","value":"PostgreSQL","confidence":0.97,"belief_type":"assertion","is_hypothetical":false,"category":"technical","source":"user","source_quote":"and PostgreSQL"}}
 ]
+
+Input: Assistant: "PostgreSQL is a popular database. You could also use Redis for caching."
+Output: []
+(Assistant suggestions — not user-declared facts)
 
 Input: User: "Actually switch from PostgreSQL to SQLite."
 Output:
 [{{"subject":"Database","predicate":"is","value":"SQLite","confidence":0.97,"belief_type":"update","is_hypothetical":false,"category":"technical","source":"user","source_quote":"switch from PostgreSQL to SQLite"}}]
 
-Input: "That sounds great!"
+Input: User: "That sounds great!"
 Output: []
 
 Conversation to extract from:
@@ -162,6 +156,14 @@ class TrackerConfig(BaseModel):
         if v.lower() not in valid:
             raise ValueError(f"store_type must be one of {valid}, got '{v}'")
         return v.lower()
+
+    @field_validator("resolution_strategy")
+    @classmethod
+    def validate_resolution_strategy(cls, v: str) -> str:
+        valid = {"overwrite", "keep_old", "raise"}
+        if v not in valid:
+            raise ValueError(f"resolution_strategy must be one of {valid}, got '{v}'")
+        return v
 
     # Detection settings
     similarity_threshold: float = Field(
@@ -242,10 +244,16 @@ class TrackerConfig(BaseModel):
         description="Arguments/instances for initializing dispatcher.",
     )
 
+    # Contradiction resolution
+    resolution_strategy: str = Field(
+        default="overwrite",
+        description="How to handle contradictions: 'overwrite' (replace old), 'keep_old' (ignore new), 'raise' (throw error).",
+    )
+
     # Belief storage limits
     max_beliefs: int = Field(
         default=50,
-        description="Maximum number of beliefs to inject into prompts (prevents context window overflow).",
+        description="Maximum number of beliefs to store per session. New beliefs beyond this limit trigger eviction of lowest-confidence beliefs.",
     )
     belief_sort_strategy: str = Field(
         default="confidence_recency",
@@ -282,8 +290,22 @@ class TrackerConfig(BaseModel):
         description="Enable token-aware belief injection for very long conversations.",
     )
     belief_budget_tokens: int = Field(
-        default=500,
+        default=300,
         description="Maximum tokens reserved for belief injection in prompts. If belief summary exceeds this, use relevance-based filtering.",
+    )
+
+    # Context injection filtering
+    exclude_sources: list = Field(
+        default_factory=lambda: ["assistant"],
+        description="Belief sources to exclude from context injection (e.g. ['assistant'] to skip LLM-generated beliefs).",
+    )
+    min_injection_confidence: float = Field(
+        default=0.80,
+        description="Minimum confidence for a belief to be injected into context prompts.",
+    )
+    include_hypothetical_in_context: bool = Field(
+        default=False,
+        description="Whether to include hypothetical beliefs in context injection.",
     )
 
     # Judge timeout

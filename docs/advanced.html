@@ -43,7 +43,7 @@
     --accent-lo:  rgba(124,111,235,0.12);
     --accent-hi:  #9D93F0;
     --green:      #34D399;
-    --green-lo:   rgba(52,211,235,0.10);
+    --green-lo:   rgba(52,211,153,0.10);
     --red:        #F87171;
     --red-lo:     rgba(248,113,113,0.10);
     --amber:      #F59E0B;
@@ -412,6 +412,14 @@
   .nb { color: var(--accent-hi); }
 
   /* ── TABLES ── */
+  .table-wrapper {
+    overflow-x: auto;
+    margin: 24px 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
   .param-table {
     width: 100%;
     border-collapse: collapse;
@@ -632,6 +640,80 @@
   @media (max-width: 480px) {
     .doc-main {
       padding: 16px 12px;
+    }
+    .nav-logo {
+      font-size: 13px;
+    }
+    .nav-logo-dot {
+      width: 6px;
+      height: 6px;
+    }
+    h1 {
+      font-size: clamp(20px, 4vw, 28px);
+    }
+    h2 {
+      font-size: 18px;
+    }
+    h3 {
+      font-size: 14px;
+    }
+    h4 {
+      font-size: 12px;
+    }
+    p {
+      font-size: 13px;
+    }
+    .lead {
+      font-size: 13px;
+    }
+    .eyebrow {
+      font-size: 10px;
+    }
+    pre {
+      font-size: 10px;
+      padding: 10px;
+      margin: 16px 0;
+    }
+    code {
+      font-size: 10px;
+    }
+    .code-inner {
+      font-size: 10px;
+      padding: 10px;
+    }
+    .prev-next-nav {
+      margin-top: 32px;
+      margin-bottom: 16px;
+    }
+    .prev-next-label {
+      font-size: 9px;
+    }
+    .prev-next-title {
+      font-size: 12px;
+    }
+    ul, ol {
+      padding-left: 16px;
+      margin: 12px 0;
+    }
+    li {
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .param-table {
+      font-size: 11px;
+      margin: 16px 0;
+    }
+    .param-table th,
+    .param-table td {
+      padding: 6px 8px;
+    }
+    .callout {
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+    .badge {
+      font-size: 10px;
+      padding: 1px 6px;
     }
   }
 

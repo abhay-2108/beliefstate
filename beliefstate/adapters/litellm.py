@@ -258,7 +258,7 @@ class LiteLLMAdapter(ProviderAdapter):
             if isinstance(item, dict):
                 embeddings.append(item["embedding"])
             else:
-                embeddings.append(getattr(item, "embedding"))
+                embeddings.append(getattr(item, "embedding", []))
         return embeddings
 
     async def get_embedding(self, text: str) -> List[float]:

@@ -1366,13 +1366,11 @@
             </div>
             <div class="code-inner"><span class="c-kw">def</span> <span class="c-fn">BeliefTracker</span>(
     config: TrackerConfig,
-    adapter: ProviderAdapter,
-    internal_adapter: Optional[ProviderAdapter] = <span class="c-kw">None</span>,
-    dispatcher: Optional[Dispatcher] = <span class="c-kw">None</span>,
-    judge: Optional[LLMJudge] = <span class="c-kw">None</span>,
+    adapter: Optional[ProviderAdapter] = <span class="c-kw">None</span>,
     store: Optional[Store] = <span class="c-kw">None</span>,
-    detector: Optional[BeliefDetector] = <span class="c-kw">None</span>,
-    resolver: Optional[BeliefResolver] = <span class="c-kw">None</span>
+    internal_adapter: Optional[ProviderAdapter] = <span class="c-kw">None</span>,
+    dispatcher: Optional[Any] = <span class="c-kw">None</span>,
+    judge: Optional[Any] = <span class="c-kw">None</span>,
 )</div>
           </div>
 
@@ -1401,12 +1399,6 @@
                   <td>Sets active session via ContextVar</td>
                 </tr>
                 <tr>
-                  <td><code>set_conversation</code></td>
-                  <td><code>set_conversation(id: str)</code></td>
-                  <td><span class="type-label">None</span></td>
-                  <td>Sets conversation within session</td>
-                </tr>
-                <tr>
                   <td><code>get_context_prompt</code></td>
                   <td><code>get_context_prompt(session_id, conversation_id, current_user_message) async</code></td>
                   <td><span class="type-label">str</span></td>
@@ -1432,9 +1424,105 @@
                 </tr>
                 <tr>
                   <td><code>get_beliefs</code></td>
-                  <td><code>get_beliefs(session_id, conversation_id=None, category=None, belief_type=None) async</code></td>
+                  <td><code>get_beliefs(session_id=None) async</code></td>
                   <td><span class="type-label">list[Belief]</span></td>
-                  <td>Query stored beliefs with optional filters.</td>
+                  <td>Returns all beliefs for a session.</td>
+                </tr>
+                <tr>
+                  <td><code>get_stats</code></td>
+                  <td><code>get_stats() -> TrackerStats</code></td>
+                  <td><span class="type-label">TrackerStats</span></td>
+                  <td>Returns runtime statistics (turns processed, beliefs extracted, success rate, etc.).</td>
+                </tr>
+                <tr>
+                  <td><code>get_stats_dict</code></td>
+                  <td><code>get_stats_dict(session_id=None) -> dict</code></td>
+                  <td><span class="type-label">dict</span></td>
+                  <td>Returns session stats as a dictionary (total_beliefs, by_subject, by_source, avg_confidence, contradictions_detected).</td>
+                </tr>
+                <tr>
+                  <td><code>get_summary</code></td>
+                  <td><code>get_summary(session_id=None, max_beliefs=None, format_template=None) async</code></td>
+                  <td><span class="type-label">str</span></td>
+                  <td>Returns formatted belief summary string for a session.</td>
+                </tr>
+                <tr>
+                  <td><code>get_pending_conflicts</code></td>
+                  <td><code>get_pending_conflicts() -> list[str]</code></td>
+                  <td><span class="type-label">list[str]</span></td>
+                  <td>Returns buffered conflict notes from background tasks (e.g., raise strategy errors). Clears the buffer.</td>
+                </tr>
+                <tr>
+                  <td><code>get_session_turn</code></td>
+                  <td><code>get_session_turn(session_id=None) -> int</code></td>
+                  <td><span class="type-label">int</span></td>
+                  <td>Returns the current turn count for a session.</td>
+                </tr>
+                <tr>
+                  <td><code>get_belief_history</code></td>
+                  <td><code>get_belief_history(session_id, subject, predicate) async</code></td>
+                  <td><span class="type-label">list[dict]</span></td>
+                  <td>Returns the audit trail for a specific belief (all historical values).</td>
+                </tr>
+                <tr>
+                  <td><code>inject_context</code></td>
+                  <td><code>inject_context(messages, session_id=None, conversation_id=None) async</code></td>
+                  <td><span class="type-label">list[dict]</span></td>
+                  <td>Injects belief context into a messages list and returns the modified list.</td>
+                </tr>
+                <tr>
+                  <td><code>clear_session</code></td>
+                  <td><code>clear_session(session_id) async</code></td>
+                  <td><span class="type-label">DeletionReceipt</span></td>
+                  <td>GDPR deletion with audit receipt.</td>
+                </tr>
+                <tr>
+                  <td><code>clear_beliefs</code></td>
+                  <td><code>clear_beliefs(session_id=None) async</code></td>
+                  <td><span class="type-label">int</span></td>
+                  <td>Clears beliefs for a session without returning a receipt. Returns count deleted.</td>
+                </tr>
+                <tr>
+                  <td><code>remove_belief</code></td>
+                  <td><code>remove_belief(session_id, subject, predicate) async</code></td>
+                  <td><span class="type-label">bool</span></td>
+                  <td>Removes a specific belief by subject and predicate.</td>
+                </tr>
+                <tr>
+                  <td><code>update_belief_reference</code></td>
+                  <td><code>update_belief_reference(session_id, subject, predicate) async</code></td>
+                  <td><span class="type-label">None</span></td>
+                  <td>Updates the last_referenced_at timestamp for a belief.</td>
+                </tr>
+                <tr>
+                  <td><code>prune_expired_beliefs</code></td>
+                  <td><code>prune_expired_beliefs(session_id=None, max_age_seconds=None) async</code></td>
+                  <td><span class="type-label">int</span></td>
+                  <td>Prunes beliefs older than max_age_seconds. Returns count deleted.</td>
+                </tr>
+                <tr>
+                  <td><code>set_session_ttl</code></td>
+                  <td><code>set_session_ttl(session_id, ttl_seconds) async</code></td>
+                  <td><span class="type-label">None</span></td>
+                  <td>Sets TTL on a session in supported stores (Redis).</td>
+                </tr>
+                <tr>
+                  <td><code>export_beliefs</code></td>
+                  <td><code>export_beliefs(session_id=None) async</code></td>
+                  <td><span class="type-label">list[dict]</span></td>
+                  <td>Exports beliefs as a list of dictionaries.</td>
+                </tr>
+                <tr>
+                  <td><code>import_beliefs</code></td>
+                  <td><code>import_beliefs(session_id=None, beliefs_data=None) async</code></td>
+                  <td><span class="type-label">int</span></td>
+                  <td>Imports beliefs from a list of dictionaries. Returns count imported.</td>
+                </tr>
+                <tr>
+                  <td><code>shutdown</code></td>
+                  <td><code>shutdown() async</code></td>
+                  <td><span class="type-label">None</span></td>
+                  <td>Gracefully shuts down the tracker: drains background tasks and closes store connections.</td>
                 </tr>
                 <tr>
                   <td><code>health_check</code></td>
@@ -1513,26 +1601,26 @@
                 </tr>
                 <tr>
                   <td><code>embedding</code></td>
-                  <td><span class="type-label">Optional[list[float]]</span></td>
-                  <td><span class="default-label none">None</span></td>
+                  <td><span class="type-label">list[float]</span></td>
+                  <td><span class="default-label">[]</span></td>
                   <td>Vector embedding of the fact text.</td>
                 </tr>
                 <tr>
                   <td><code>embedding_model</code></td>
-                  <td><span class="type-label">Optional[str]</span></td>
-                  <td><span class="default-label none">None</span></td>
+                  <td><span class="type-label">str</span></td>
+                  <td><span class="default-label">""</span></td>
                   <td>Model used to generate the embedding.</td>
                 </tr>
                 <tr>
                   <td><code>embedding_dim</code></td>
-                  <td><span class="type-label">Optional[int]</span></td>
-                  <td><span class="default-label none">None</span></td>
+                  <td><span class="type-label">int</span></td>
+                  <td><span class="default-label">0</span></td>
                   <td>Dimension count of the embedding vector.</td>
                 </tr>
                 <tr>
                   <td><code>session_id</code></td>
-                  <td><span class="type-label">str</span></td>
-                  <td><span class="default-label required">required</span></td>
+                  <td><span class="type-label">Optional[str]</span></td>
+                  <td><span class="default-label none">None</span></td>
                   <td>Owner session ID.</td>
                 </tr>
                 <tr>
@@ -1549,14 +1637,14 @@
                 </tr>
                 <tr>
                   <td><code>last_referenced_at</code></td>
-                  <td><span class="type-label">Optional[datetime]</span></td>
-                  <td><span class="default-label none">None</span></td>
-                  <td>UTC timestamp of last prompt injection.</td>
+                  <td><span class="type-label">datetime</span></td>
+                  <td><span class="default-label">auto</span></td>
+                  <td>UTC timestamp of last prompt injection. Auto-generated if not set.</td>
                 </tr>
                 <tr>
                   <td><code>category</code></td>
                   <td><span class="type-label">str</span></td>
-                  <td><span class="default-label">"general"</span></td>
+                  <td><span class="default-label">""</span></td>
                   <td>Domain category (e.g., 'preference', 'fact', 'context').</td>
                 </tr>
                 <tr>
@@ -1894,6 +1982,10 @@ text = <span class="c-fn">summary_for_prompt</span>(beliefs, max_beliefs=<span c
     <span class="c-kw">async def</span> <span class="c-fn">get_embeddings</span>(self, texts) -> list[list[float]]:
         ...
 
+    <span class="c-kw">def</span> <span class="c-fn">inject_context</span>(self, context_prompt, *args, **kwargs):
+        <span class="c-cm">"""Inject context into the LLM call arguments."""</span>
+        ...
+
     <span class="c-kw">async def</span> <span class="c-fn">health_check</span>(self) -> bool:
         ...</div>
           </div>
@@ -2015,7 +2107,7 @@ text = <span class="c-fn">summary_for_prompt</span>(beliefs, max_beliefs=<span c
                     <li>OpenAI, Anthropic, Gemini, Ollama, LiteLLM adapters</li>
                     <li>SQLite and Redis store backends</li>
                     <li>Two-stage contradiction detection (cosine + NLI)</li>
-                    <li>WARN / ASK / BLOCK / UPDATE resolution strategies</li>
+                    <li>OVERWRITE / KEEP_OLD / RAISE resolution strategies</li>
                     <li>FastAPI, Flask, ASGI middleware</li>
                     <li>LangChain and LlamaIndex callbacks</li>
                     <li>OpenAI Assistants observer</li>

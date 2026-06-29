@@ -29,8 +29,9 @@ conversation_context: ContextVar[Optional[str]] = ContextVar(
 
 T = TypeVar("T")
 
-# Per-session async locks for coordinating concurrent writes
+# Per-session async locks for coordinating concurrent writes (bounded to avoid memory leak)
 _session_locks: Dict[str, asyncio.Lock] = {}
+_MAX_SESSION_LOCKS = 1000
 
 
 class ConfigurationWarning(UserWarning):
@@ -224,6 +225,11 @@ def _detect_adapter(result: Any) -> ProviderAdapter:
 def _get_session_lock(session_id: str) -> asyncio.Lock:
     lock = _session_locks.get(session_id)
     if lock is None:
+        # Evict stale locks if at capacity
+        if len(_session_locks) >= _MAX_SESSION_LOCKS:
+            stale = [sid for sid, lk in list(_session_locks.items()) if not lk.locked()]
+            for sid in stale[: len(stale) // 2 + 1]:
+                del _session_locks[sid]
         lock = asyncio.Lock()
         existing = _session_locks.setdefault(session_id, lock)
         if existing is not lock:
@@ -418,12 +424,15 @@ class BeliefTracker:
 
         self.extractor: Optional[BeliefExtractor] = None
         self.detector: Optional[ContradictionDetector] = None
-        self.resolver = BeliefResolver(store=self.store, strategy="overwrite")
+        self.resolver = BeliefResolver(
+            store=self.store, strategy=self.config.resolution_strategy
+        )
         self._session_turn_counters: Dict[str, int] = {}
         self._session_turn_states: Dict[str, int] = {}
         self._session_providers: Dict[str, str] = {}
         self._stats = TrackerStats()
         self._pending_tasks: Set[asyncio.Task[None]] = set()
+        self._pending_conflict_notes: Dict[str, List[str]] = {}
 
         if dispatcher is not None:
             self.dispatcher = dispatcher
@@ -450,9 +459,17 @@ class BeliefTracker:
 
     @property
     def turn_counter(self) -> int:
+        """Return turn counter for the current session context.
+
+        .. deprecated::
+            Use ``get_session_turn()`` instead. This property returns the max
+            across all sessions when called without session context, which may
+            be misleading.
+        """
         if not self._session_turn_counters:
             return 0
-        return max(self._session_turn_counters.values())
+        sid = session_context.get()
+        return self._session_turn_counters.get(sid, 0)
 
     @turn_counter.setter
     def turn_counter(self, value: int) -> None:
@@ -481,6 +498,21 @@ class BeliefTracker:
             lock = _session_locks[sid]
             if not lock.locked():
                 del _session_locks[sid]
+        # Enforce max limit: remove oldest (by insertion order) if still over
+        while len(_session_locks) > _MAX_SESSION_LOCKS:
+            oldest_sid = next(iter(_session_locks))
+            if not _session_locks[oldest_sid].locked():
+                del _session_locks[oldest_sid]
+            else:
+                break
+
+    async def _evict_lowest_confidence_belief(self, session_id: str) -> None:
+        """Remove the lowest-confidence belief when storage limit is reached."""
+        beliefs = await self.store.get_beliefs(session_id)
+        if not beliefs:
+            return
+        lowest = min(beliefs, key=lambda b: (b.confidence, b.turn))
+        await self.store.remove_belief(session_id, lowest.subject, lowest.predicate)
 
     async def shutdown(self, grace_seconds: float = 5.0) -> None:
         """Gracefully drain pending background tasks and close the store.
@@ -491,10 +523,15 @@ class BeliefTracker:
             logger.info(
                 f"beliefstate_shutdown: draining {len(self._pending_tasks)} pending tasks"
             )
-            await asyncio.wait(self._pending_tasks, timeout=grace_seconds)
-            for task in list(self._pending_tasks):
-                if not task.done():
-                    task.cancel()
+            _done, pending = await asyncio.wait(
+                self._pending_tasks, timeout=grace_seconds
+            )
+            for task in pending:
+                logger.warning(
+                    f"beliefstate_shutdown: cancelling task {task.get_name()} "
+                    f"after {grace_seconds}s grace period"
+                )
+                task.cancel()
         if hasattr(self.store, "close"):
             await self.store.close()
 
@@ -550,7 +587,9 @@ class BeliefTracker:
 
     def get_pending_conflicts(self, session_id: Optional[str] = None) -> list[str]:
         sid = session_id or session_context.get()
-        return self.resolver.pop_pending_conflicts(sid)
+        notes = self._pending_conflict_notes.pop(sid, [])
+        notes.extend(self.resolver.pop_pending_conflicts(sid))
+        return notes
 
     async def clear_session(
         self, session_id: Optional[str] = None
@@ -573,6 +612,7 @@ class BeliefTracker:
         logger.info(f"Deleted {beliefs_deleted} beliefs for session {sid}")
 
         self.resolver.clear_session(sid)
+        self._pending_conflict_notes.pop(sid, None)
         logger.info(f"Cleared conflict history for session {sid}")
 
         self._session_turn_counters.pop(sid, None)
@@ -750,6 +790,27 @@ class BeliefTracker:
         if not beliefs:
             return ""
 
+        # B3: Filter by source (exclude assistant beliefs, etc.)
+        exclude = set(self.config.exclude_sources)
+        if exclude:
+            beliefs = [b for b in beliefs if b.source not in exclude]
+
+        # I3: Filter by minimum confidence
+        beliefs = [
+            b for b in beliefs if b.confidence >= self.config.min_injection_confidence
+        ]
+
+        # I4: Filter hypotheticals unless opted in
+        if not self.config.include_hypothetical_in_context:
+            non_hypothetical = [
+                b for b in beliefs if not getattr(b, "is_hypothetical", False)
+            ]
+            if non_hypothetical:
+                beliefs = non_hypothetical
+
+        if not beliefs:
+            return ""
+
         if self.config.enable_staleness_scoring:
             filtered_beliefs = [
                 b
@@ -761,12 +822,6 @@ class BeliefTracker:
                     beliefs, key=lambda b: (b.confidence, b.turn), reverse=True
                 )[:5]
         else:
-            filtered_beliefs = beliefs
-
-        filtered_beliefs = [
-            b for b in filtered_beliefs if not getattr(b, "is_hypothetical", False)
-        ]
-        if not filtered_beliefs and beliefs:
             filtered_beliefs = beliefs
 
         strategy = self.config.belief_sort_strategy
@@ -1011,9 +1066,20 @@ class BeliefTracker:
                 self._session_turn_states[session_id] = turn
                 await self.resolver.resolve(session_id, contradictions)
 
+                # Surface conflict notes so they're available via get_pending_conflicts()
+                conflict_notes = self.resolver.pop_pending_conflicts(session_id)
+                if conflict_notes:
+                    self._pending_conflict_notes.setdefault(session_id, []).extend(
+                        conflict_notes
+                    )
+
                 contradicting_new_beliefs = [c[1] for c in contradictions]
                 for b in new_beliefs:
                     if b not in contradicting_new_beliefs and b not in duplicates:
+                        # Enforce storage limit: evict lowest-confidence belief if full
+                        current_count = await self.store.belief_count(session_id)
+                        if current_count >= self.config.max_beliefs:
+                            await self._evict_lowest_confidence_belief(session_id)
                         await self.store.add_belief(session_id, b)
 
             self._stats.record_success()
@@ -1076,12 +1142,13 @@ class BeliefTracker:
             @wraps(f)
             async def wrapper(*args: Any, **kwargs: Any) -> Any:
                 session_id = session_context.get()
-                # NOTE: Dict operations are atomic under CPython's GIL.
-                # For other Python implementations, this would need a lock.
-                self._session_turn_counters[session_id] = (
-                    self._session_turn_counters.get(session_id, 0) + 1
-                )
-                current_turn = self._session_turn_counters[session_id]
+                # Use per-session lock for atomic turn counter increment.
+                lock = _get_session_lock(session_id)
+                async with lock:
+                    self._session_turn_counters[session_id] = (
+                        self._session_turn_counters.get(session_id, 0) + 1
+                    )
+                    current_turn = self._session_turn_counters[session_id]
 
                 if auto_inject:
                     last_user_msg = ""

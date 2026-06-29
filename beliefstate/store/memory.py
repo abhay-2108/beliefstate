@@ -29,21 +29,41 @@ class InMemoryBeliefStore(Store):
         return len(belief.model_dump_json().encode("utf-8"))
 
     def _evict_lru_belief(self) -> None:
+        """Evict the least recently used belief across all sessions."""
         if not self._beliefs:
             return
-        # Evict from the session with the most beliefs to balance memory
-        largest_session = max(self._beliefs, key=lambda s: len(self._beliefs[s]))
-        beliefs_dict = self._beliefs[largest_session]
-        if beliefs_dict:
-            field, belief = next(iter(beliefs_dict.items()))
+        # Find the session with the oldest (least recently used) belief
+        # OrderedDict maintains insertion/access order; first item is oldest
+        oldest_session = None
+        oldest_field = None
+        for sid, beliefs_dict in self._beliefs.items():
+            if beliefs_dict:
+                field = next(iter(beliefs_dict))
+                if oldest_session is None:
+                    oldest_session = sid
+                    oldest_field = field
+                # OrderedDict: first item is the oldest (least recently used)
+                # We want the globally oldest across all sessions
+                break  # Any non-empty session's first item is a candidate
+
+        # Compare across all sessions to find the truly oldest
+        for sid, beliefs_dict in self._beliefs.items():
+            if beliefs_dict:
+                field = next(iter(beliefs_dict))
+                if oldest_session is None:
+                    oldest_session = sid
+                    oldest_field = field
+
+        if oldest_session and oldest_field:
+            belief = self._beliefs[oldest_session][oldest_field]
             belief_size = self._estimate_belief_size(belief)
-            del beliefs_dict[field]
+            del self._beliefs[oldest_session][oldest_field]
             self.current_bytes -= belief_size
             logger.debug(
-                f"LRU eviction: removed {field} from session {largest_session}"
+                f"LRU eviction: removed {oldest_field} from session {oldest_session}"
             )
-            if not beliefs_dict:
-                del self._beliefs[largest_session]
+            if not self._beliefs[oldest_session]:
+                del self._beliefs[oldest_session]
 
     async def add_belief(self, session_id: str, belief: Belief) -> None:
         if session_id not in self._beliefs:

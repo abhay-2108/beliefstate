@@ -8,10 +8,17 @@ __pycache__/
 
 # Environments
 .env
+.env.local
+.env.*.local
 .venv/
 env/
 venv/
 ENV/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
 
 # SQLite databases & logs (local application stores)
 *.db
@@ -26,8 +33,14 @@ ENV/
 # Streamlit config/secrets
 .streamlit/
 
+# uv
+.python-version
+
 # OS/IDE specific files
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+
+# uv
+uv.lock

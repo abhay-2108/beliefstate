@@ -173,7 +173,7 @@ class OpenAIAdapter(ProviderAdapter):
                 response = await self.client.beta.chat.completions.parse(
                     response_format=response_format, **kwargs
                 )
-            except AttributeError:
+            except (AttributeError, TypeError):
                 kwargs["response_format"] = response_format
                 response = await self.client.chat.completions.create(**kwargs)
         else:

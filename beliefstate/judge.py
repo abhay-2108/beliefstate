@@ -118,8 +118,6 @@ class LocalNLIJudge(ContradictionJudge):
         premise = f"{old.subject} {old.predicate} {old.value}"
         hypothesis = f"{new.subject} {new.predicate} {new.value}"
 
-        import asyncio
-
         loop = asyncio.get_running_loop()
 
         pipeline_fn = self._pipeline

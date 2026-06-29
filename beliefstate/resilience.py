@@ -1,5 +1,6 @@
 import time
 import logging
+import threading
 from typing import Any, List, Callable, Coroutine, Optional, cast
 from tenacity import (
     AsyncRetrying,
@@ -30,43 +31,47 @@ class CircuitBreaker:
         self.failure_count = 0
         self.state = "CLOSED"  # CLOSED, OPEN, HALF-OPEN
         self.last_state_change = time.time()
+        self._lock = threading.Lock()
 
     def record_success(self) -> None:
-        if self.state != "CLOSED":
-            logger.info("Circuit breaker recovered. State changed to CLOSED.")
-        self.failure_count = 0
-        self.state = "CLOSED"
-        self.last_state_change = time.time()
-
-    def record_failure(self) -> None:
-        self.failure_count += 1
-        logger.warning(
-            f"Recorded failure {self.failure_count}/{self.failure_threshold}."
-        )
-        if self.failure_count >= self.failure_threshold:
-            if self.state != "OPEN":
-                logger.error(
-                    f"Circuit breaker tripped. State changed to OPEN. Cooldown: {self.recovery_timeout}s."
-                )
-            self.state = "OPEN"
+        with self._lock:
+            if self.state != "CLOSED":
+                logger.info("Circuit breaker recovered. State changed to CLOSED.")
+            self.failure_count = 0
+            self.state = "CLOSED"
             self.last_state_change = time.time()
 
+    def record_failure(self) -> None:
+        with self._lock:
+            self.failure_count += 1
+            logger.warning(
+                f"Recorded failure {self.failure_count}/{self.failure_threshold}."
+            )
+            if self.failure_count >= self.failure_threshold:
+                if self.state != "OPEN":
+                    logger.error(
+                        f"Circuit breaker tripped. State changed to OPEN. Cooldown: {self.recovery_timeout}s."
+                    )
+                self.state = "OPEN"
+                self.last_state_change = time.time()
+
     def allow_request(self) -> bool:
-        if self.state == "CLOSED":
-            return True
-        if self.state == "OPEN":
-            now = time.time()
-            if now - self.last_state_change > self.recovery_timeout:
-                logger.info(
-                    "Circuit breaker entered HALF-OPEN state (cooldown expired)."
-                )
-                self.state = "HALF-OPEN"
-                self.last_state_change = now
+        with self._lock:
+            if self.state == "CLOSED":
+                return True
+            if self.state == "OPEN":
+                now = time.time()
+                if now - self.last_state_change > self.recovery_timeout:
+                    logger.info(
+                        "Circuit breaker entered HALF-OPEN state (cooldown expired)."
+                    )
+                    self.state = "HALF-OPEN"
+                    self.last_state_change = now
+                    return True
+                return False
+            if self.state == "HALF-OPEN":
                 return True
             return False
-        if self.state == "HALF-OPEN":
-            return True
-        return False
 
 
 def is_transient_error(exc: BaseException) -> bool:
