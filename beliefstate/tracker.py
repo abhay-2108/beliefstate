@@ -435,7 +435,9 @@ class BeliefTracker:
         self._stats = TrackerStats()
         self._pending_tasks: Set[asyncio.Task[None]] = set()
         self._pending_conflict_notes: Dict[str, List[str]] = {}
-        self._dashboard_callback: Optional[Callable[[Dict[str, Any]], Coroutine[Any, Any, None]]] = None
+        self._dashboard_callback: Optional[
+            Callable[[Dict[str, Any]], Coroutine[Any, Any, None]]
+        ] = None
 
         if dispatcher is not None:
             self.dispatcher = dispatcher
@@ -1058,16 +1060,23 @@ class BeliefTracker:
             self._stats.total_beliefs_extracted += len(new_beliefs)
 
             if self._dashboard_callback:
-                await self._dashboard_callback({
-                    "type": "extraction",
-                    "session_id": session_id,
-                    "turn": turn,
-                    "count": len(new_beliefs),
-                    "beliefs": [
-                        {"subject": b.subject, "predicate": b.predicate, "value": b.value, "confidence": b.confidence}
-                        for b in new_beliefs
-                    ],
-                })
+                await self._dashboard_callback(
+                    {
+                        "type": "extraction",
+                        "session_id": session_id,
+                        "turn": turn,
+                        "count": len(new_beliefs),
+                        "beliefs": [
+                            {
+                                "subject": b.subject,
+                                "predicate": b.predicate,
+                                "value": b.value,
+                                "confidence": b.confidence,
+                            }
+                            for b in new_beliefs
+                        ],
+                    }
+                )
 
             if not new_beliefs:
                 self._stats.record_success()
@@ -1082,12 +1091,14 @@ class BeliefTracker:
             self._stats.total_duplicates_skipped += len(duplicates)
 
             if self._dashboard_callback:
-                await self._dashboard_callback({
-                    "type": "contradiction",
-                    "session_id": session_id,
-                    "turn": turn,
-                    "count": len(contradictions),
-                })
+                await self._dashboard_callback(
+                    {
+                        "type": "contradiction",
+                        "session_id": session_id,
+                        "turn": turn,
+                        "count": len(contradictions),
+                    }
+                )
 
             # Write phase is serialised per session
             async with _get_session_lock(session_id):
@@ -1128,13 +1139,15 @@ class BeliefTracker:
                     )
 
                 if self._dashboard_callback and conflict_notes:
-                    await self._dashboard_callback({
-                        "type": "resolution",
-                        "session_id": session_id,
-                        "turn": turn,
-                        "count": len(conflict_notes),
-                        "notes": conflict_notes,
-                    })
+                    await self._dashboard_callback(
+                        {
+                            "type": "resolution",
+                            "session_id": session_id,
+                            "turn": turn,
+                            "count": len(conflict_notes),
+                            "notes": conflict_notes,
+                        }
+                    )
 
                 contradicting_new_beliefs = [c[1] for c in contradictions]
                 stored_count = 0
@@ -1148,12 +1161,14 @@ class BeliefTracker:
                         stored_count += 1
 
                 if self._dashboard_callback and stored_count:
-                    await self._dashboard_callback({
-                        "type": "beliefs_stored",
-                        "session_id": session_id,
-                        "turn": turn,
-                        "count": stored_count,
-                    })
+                    await self._dashboard_callback(
+                        {
+                            "type": "beliefs_stored",
+                            "session_id": session_id,
+                            "turn": turn,
+                            "count": stored_count,
+                        }
+                    )
 
             self._stats.record_success()
 

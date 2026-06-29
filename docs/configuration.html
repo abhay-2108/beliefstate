@@ -1147,6 +1147,7 @@
       <a href="configuration.html#tracker-config" class="sidebar-link">TrackerConfig</a>
       <a href="configuration.html#confidence-judge" class="sidebar-link">Confidence &amp; Judge</a>
       <a href="configuration.html#prompts" class="sidebar-link">Custom Prompts</a>
+      <a href="configuration.html#dashboard" class="sidebar-link">Dashboard</a>
     </div>
 
     <div class="sidebar-group">
@@ -1775,6 +1776,64 @@ Attempt 5: 30.0s delay (capped at retry_max_wait)</div>
           </ol>
         </section>
 
+        <!-- Developer Dashboard -->
+        <section class="doc-section" id="dashboard">
+          <h2>Developer Dashboard</h2>
+          <p>
+            Enable the built-in web dashboard to inspect beliefs, track contradictions,
+            compare sessions, and monitor pipeline activity in real time.
+          </p>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Type</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>enable_dashboard</code></td>
+                  <td><span class="type-label">bool</span></td>
+                  <td><span class="default-label none">False</span></td>
+                  <td>Starts a FastAPI server with a browser UI at <code>http://127.0.0.1:8000</code>. Requires <code>fastapi</code>, <code>uvicorn</code>, and <code>sse-starlette</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="code-block">
+            <div class="code-topbar">
+              <div class="code-dot" style="background:#EF4444"></div>
+              <div class="code-dot" style="background:#F59E0B"></div>
+              <div class="code-dot" style="background:#22C55E"></div>
+              <span class="code-filename">setup.py</span>
+              <button class="btn-icon copy-btn">copy</button>
+            </div>
+            <div class="code-inner"><span class="c-kw">from</span> beliefstate <span class="c-kw">import</span> <span class="c-fn">BeliefTracker</span>, <span class="c-fn">TrackerConfig</span>
+
+tracker = <span class="c-fn">BeliefTracker</span>(
+    adapter=<span class="c-fn">OpenAIAdapter</span>(model=<span class="c-str">"gpt-4o"</span>),
+    config=<span class="c-fn">TrackerConfig</span>(
+        enable_dashboard=<span class="c-kw">True</span>,
+    ),
+)</div>
+          </div>
+
+          <div class="callout tip">
+            <div class="callout-label">Tip</div>
+            <p>
+              Once enabled, the dashboard URL appears in the terminal. Open it in your browser
+              to access live charts, session comparison, contradiction heatmaps, global search,
+              alert rules, keyboard shortcuts, and real-time SSE pipeline events. Install deps:
+              <code>pip install "beliefstate[dashboard]"</code>.
+            </p>
+          </div>
+        </section>
+
         <!-- Confidence Caps & Judge Timeout -->
         <section class="doc-section" id="confidence-judge">
           <h2>Confidence Caps &amp; Judge Timeout</h2>
@@ -2043,6 +2102,7 @@ Output JSON: {"relationship": "contradiction|entailment|neutral", "score": float
           <li><a href="#prompts" class="otp-link">Custom Prompts</a></li>
           <li><a href="#extraction-prompt" class="otp-link indent">Extraction Prompt</a></li>
           <li><a href="#judge-prompt" class="otp-link indent">Judge Prompt</a></li>
+          <li><a href="#dashboard" class="otp-link indent">Developer Dashboard</a></li>
         </ul>
       </aside>
     </div>

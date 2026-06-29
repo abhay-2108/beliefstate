@@ -57,16 +57,26 @@ await chat([{"role": "user", "content": "I live in Tokyo and work at Google."}])
 
 | Feature | Description |
 |---------|-------------|
-| **Zero-latency** | Background extraction — no added latency to your request path |
-| **5 LLM providers** | OpenAI, Anthropic, Gemini, Ollama, LiteLLM (100+ via LiteLLM) |
-| **Dual-adapter** | Expensive model for your app, cheap/local model for tracking |
-| **Contradiction detection** | NLI judge resolves conflicting facts gracefully |
-| **Persistent stores** | SQLite, PostgreSQL, Redis — with full audit trails |
-| **Framework integrations** | LangChain, LlamaIndex, FastAPI, Flask, OpenAI Assistants |
-| **Production resilience** | Retry with backoff, circuit breakers, health checks |
-| **Pluggable dispatchers** | Celery, Redis Queue — survives server restarts |
-| **GDPR-ready** | One-call `clear_session()` with auditable deletion receipts |
-| **Observability** | OpenTelemetry traces and metrics — built-in, optional |
+| **Zero-latency tracking** | Background extraction pipeline — no added latency to your request path |
+| **Dual-source extraction** | Extracts beliefs from both user messages and assistant responses every turn |
+| **5+ LLM providers** | OpenAI, Anthropic, Gemini, Ollama, LiteLLM (100+ models via LiteLLM) |
+| **Dual-adapter architecture** | Expensive model for your app, cheap/local model for background tracking |
+| **NLI contradiction detection** | 3-stage pipeline: rule-based → embedding similarity → LLM judge, with negation awareness and exact-match dedup |
+| **3 resolution strategies** | `overwrite`, `keep_old`, or `raise` — with escalation logic (ASK → BLOCK) and per-belief resolution notes |
+| **Confidence calibration** | Automatic hedging detection, per-source confidence caps (user/assistant), hypothetical flagging |
+| **Belief categorization** | Extracted beliefs grouped into 5 categories: identity, technical, planning, constraint, state |
+| **Persistent stores** | SQLite, PostgreSQL, Redis — with full audit trails, binary embedding storage, and automatic schema migration |
+| **Streaming support** | `@tracker.wrap(stream=True)` intercepts async generators, accumulates text, and dispatches tracking on completion |
+| **Automatic context injection** | Relevant beliefs injected into the system prompt on every call — with category-grouped summarization |
+| **Token-aware injection** | Relevance-based belief selection within a configurable token budget using vector similarity |
+| **Framework integrations** | LangChain, LlamaIndex, FastAPI, Flask, ASGI, WSGI, OpenAI Assistants |
+| **Production resilience** | Retry with exponential backoff, circuit breakers (per operation), health checks, graceful shutdown with task draining |
+| **Pluggable dispatchers** | Asyncio (in-process), Sync, Celery, Redis Queue — survives server restarts |
+| **GDPR-compliant** | `clear_session()` with auditable deletion receipts and in-flight task draining |
+| **Staleness scoring & TTL** | Automatic belief decay (`confidence / days_since_reference`) and configurable time-based pruning |
+| **Belief export/import** | JSON round-trip for portable belief data; CSV export via dashboard |
+| **Developer Dashboard** | Live browser UI with charts, session compare, contradiction heatmaps, global search, alert rules, keyboard shortcuts, and real-time SSE pipeline events |
+| **Observability** | OpenTelemetry traces and metrics, structured `TrackerEvent` logging with JSON output |
 
 ---
 
@@ -91,6 +101,7 @@ pip install "beliefstate[langchain]"      # LangChain integration
 pip install "beliefstate[llamaindex]"     # LlamaIndex integration
 pip install "beliefstate[fastapi]"        # FastAPI middleware
 pip install "beliefstate[flask]"          # Flask middleware
+pip install "beliefstate[dashboard]"      # Developer dashboard (fastapi, uvicorn)
 pip install "beliefstate[all]"            # Everything
 ```
 
