@@ -140,7 +140,7 @@ def _get_cached_adapter(
 
         module = importlib.import_module(module_path)
         adapter_cls = getattr(module, class_name)
-        instance = adapter_cls()
+        instance: ProviderAdapter = adapter_cls()
         _adapter_cache[cache_key] = instance
         return instance
     except ImportError:
