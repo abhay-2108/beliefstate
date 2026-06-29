@@ -199,7 +199,7 @@ class RedisStore(Store):
         ttl = await self._client.ttl(key)
         if ttl == -2:
             return None  # Key does not exist
-        return ttl  # -1 (no expiry) or positive TTL
+        return int(ttl)  # -1 (no expiry) or positive TTL
 
     async def get_audit_history(
         self,

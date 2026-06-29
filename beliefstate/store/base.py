@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, List, Optional, Protocol, Tuple, runtime_checkable
 from beliefstate.models import Belief
 
 
@@ -101,7 +101,7 @@ def summary_for_prompt(
     Groups beliefs by category and excludes superseded beliefs.
     """
     # B5: Deduplicate by (subject, predicate) keeping highest turn (latest)
-    deduped: Dict[tuple, Belief] = {}
+    deduped: Dict[Tuple[str, str], Belief] = {}
     for b in beliefs:
         key = (b.subject.lower(), b.predicate.lower())
         existing = deduped.get(key)

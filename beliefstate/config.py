@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 DEFAULT_EXTRACT_PROMPT = """
@@ -295,7 +295,7 @@ class TrackerConfig(BaseModel):
     )
 
     # Context injection filtering
-    exclude_sources: list = Field(
+    exclude_sources: List[str] = Field(
         default_factory=lambda: ["assistant"],
         description="Belief sources to exclude from context injection (e.g. ['assistant'] to skip LLM-generated beliefs).",
     )
