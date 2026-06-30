@@ -1,0 +1,26 @@
+name: Documentation
+description: Suggest improvements or report issues in the documentation
+labels: ["documentation"]
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Page or section affected
+      description: Which documentation page or section has the issue?
+      placeholder: "e.g. docs/adapters.html — OpenAI section"
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: What is wrong or missing?
+      description: Describe the documentation issue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: If you have a suggestion for how to fix it, describe it here.

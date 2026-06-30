@@ -120,6 +120,10 @@ warn_unused_ignores = false
 line-length = 88
 target-version = "py310"
 
+[tool.bandit]
+exclude_dirs = ["tests", "test_package", "dashboard", "docs"]
+skips = ["B101", "B110", "B311", "B324"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
