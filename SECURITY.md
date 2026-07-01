@@ -10,7 +10,7 @@
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability in this project, please report it
-responsibly using [GitHub Security Advisories](https://github.com/abhay-2108/beliefstate/security/advisories/new).
+responsibly using [GitHub Security Advisories](https://github.com/AltioraLabs/beliefstate/security/advisories/new).
 
 **Please do NOT report security vulnerabilities through public GitHub issues.**
 

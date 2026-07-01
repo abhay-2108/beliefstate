@@ -50,7 +50,7 @@
 
 ## Checklist
 
-- [ ] I have read the [CONTRIBUTING](https://github.com/abhay-2108/beliefstate/blob/main/CONTRIBUTING.md) guide
+- [ ] I have read the [CONTRIBUTING](https://github.com/AltioraLabs/beliefstate/blob/main/CONTRIBUTING.md) guide
 - [ ] My code follows the project's coding standards (`ruff check .` passes)
 - [ ] My code is formatted correctly (`ruff format --check .` passes)
 - [ ] My type checks pass (`mypy beliefstate` passes)

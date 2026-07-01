@@ -28,11 +28,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/abhay-2108/beliefstate"
-Repository = "https://github.com/abhay-2108/beliefstate"
-Documentation = "https://abhay-2108.github.io/beliefstate/"
-Issues = "https://github.com/abhay-2108/beliefstate/issues"
-Changelog = "https://github.com/abhay-2108/beliefstate/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/AltioraLabs/beliefstate"
+Repository = "https://github.com/AltioraLabs/beliefstate"
+Documentation = "https://AltioraLabs.github.io/beliefstate/"
+Issues = "https://github.com/AltioraLabs/beliefstate/issues"
+Changelog = "https://github.com/AltioraLabs/beliefstate/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 openai = [

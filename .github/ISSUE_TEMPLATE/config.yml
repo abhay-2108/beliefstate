@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability
-    url: https://github.com/abhay-2108/beliefstate/security/advisories/new
+    url: https://github.com/AltioraLabs/beliefstate/security/advisories/new
     about: Please review our security policy for more details
   - name: Security Vulnerability
-    url: https://github.com/abhay-2108/beliefstate/security/advisories/new
+    url: https://github.com/AltioraLabs/beliefstate/security/advisories/new
     about: Report security vulnerabilities privately via GitHub Security Advisories

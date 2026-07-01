@@ -73,7 +73,7 @@ export function Layout({
   const [notifOpen, setNotifOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
-  const handleHelp = useCallback(() => window.open('https://abhay-2108.github.io/beliefstate/', '_blank', 'noopener'), []);
+  const handleHelp = useCallback(() => window.open('https://AltioraLabs.github.io/beliefstate/', '_blank', 'noopener'), []);
   const pendingKey = React.useRef('');
 
   useEffect(() => {

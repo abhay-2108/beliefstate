@@ -14,7 +14,7 @@ Thank you for considering contributing to BeliefState! This document provides gu
 
 ## Code of Conduct
 
-This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Report unacceptable behavior via [GitHub Security Advisories](https://github.com/abhay-2108/beliefstate/security/advisories/new).
+This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Report unacceptable behavior via [GitHub Security Advisories](https://github.com/AltioraLabs/beliefstate/security/advisories/new).
 
 ## Getting Started
 
@@ -167,7 +167,7 @@ Use the **Feature Request** template. Include:
 
 ### Questions
 
-For general questions, please use [GitHub Discussions](https://github.com/abhay-2108/beliefstate/discussions) if available, or open a feature request template and mark it as a question.
+For general questions, please use [GitHub Discussions](https://github.com/AltioraLabs/beliefstate/discussions) if available, or open a feature request template and mark it as a question.
 
 ## Project Structure
 
@@ -193,7 +193,7 @@ docs/              # Documentation site
 
 ## Security
 
-If you discover a security vulnerability, please **do not** open a public issue. Instead, report it via [GitHub Security Advisories](https://github.com/abhay-2108/beliefstate/security/advisories/new). See [SECURITY.md](SECURITY.md) for details.
+If you discover a security vulnerability, please **do not** open a public issue. Instead, report it via [GitHub Security Advisories](https://github.com/AltioraLabs/beliefstate/security/advisories/new). See [SECURITY.md](SECURITY.md) for details.
 
 ## License
 

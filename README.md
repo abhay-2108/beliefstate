@@ -7,11 +7,11 @@
 
 <p align="center">
   <a href="https://pypi.org/project/beliefstate/"><img src="https://img.shields.io/pypi/v/beliefstate?color=blue" alt="PyPI"></a>
-  <a href="https://github.com/abhay-2108/beliefstate/blob/main/LICENSE"><img src="https://img.shields.io/github/license/abhay-2108/beliefstate" alt="License"></a>
+  <a href="https://github.com/AltioraLabs/beliefstate/blob/main/LICENSE"><img src="https://img.shields.io/github/license/AltioraLabs/beliefstate" alt="License"></a>
   <a href="https://pypi.org/project/beliefstate/"><img src="https://img.shields.io/pypi/pyversions/beliefstate" alt="Python"></a>
-  <a href="https://github.com/abhay-2108/beliefstate/actions/workflows/ci.yml"><img src="https://github.com/abhay-2108/beliefstate/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/abhay-2108/beliefstate/actions/workflows/lint.yml"><img src="https://github.com/abhay-2108/beliefstate/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
-  <a href="https://abhay-2108.github.io/beliefstate/"><img src="https://img.shields.io/badge/docs-online-brightgreen" alt="Docs"></a>
+  <a href="https://github.com/AltioraLabs/beliefstate/actions/workflows/ci.yml"><img src="https://github.com/AltioraLabs/beliefstate/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/AltioraLabs/beliefstate/actions/workflows/lint.yml"><img src="https://github.com/AltioraLabs/beliefstate/actions/workflows/lint.yml/badge.svg" alt="Lint"></a>
+  <a href="https://AltioraLabs.github.io/beliefstate/"><img src="https://img.shields.io/badge/docs-online-brightgreen" alt="Docs"></a>
 </p>
 
 
@@ -116,7 +116,7 @@ pip install "beliefstate[all]"            # Everything
 
 For provider setup, store configuration, framework integrations, advanced usage, and API reference:
 
-**[https://abhay-2108.github.io/beliefstate/](https://abhay-2108.github.io/beliefstate/)**
+**[https://AltioraLabs.github.io/beliefstate/](https://AltioraLabs.github.io/beliefstate/)**
 
 ---
 
@@ -139,7 +139,7 @@ tracker = BeliefTracker(
 ## Development
 
 ```bash
-git clone https://github.com/abhay-2108/beliefstate.git
+git clone https://github.com/AltioraLabs/beliefstate.git
 cd beliefstate
 pip install -e ".[dev]"
 pytest

@@ -913,8 +913,8 @@ def render_footer() -> None:
     st.markdown(
         '<div style="text-align:center;font-size:12px;color:#52525B;font-family:monospace">'
         "beliefstate · MIT Licensed · "
-        '<a href="https://abhay-2108.github.io/beliefstate/" style="color:#7C6FEB">Docs</a> · '
-        '<a href="https://github.com/abhay-2108/beliefstate" style="color:#7C6FEB">GitHub</a>'
+        '<a href="https://AltioraLabs.github.io/beliefstate/" style="color:#7C6FEB">Docs</a> · '
+        '<a href="https://github.com/AltioraLabs/beliefstate" style="color:#7C6FEB">GitHub</a>'
         "</div>",
         unsafe_allow_html=True,
     )
