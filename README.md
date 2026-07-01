@@ -14,6 +14,10 @@
   <a href="https://abhay-2108.github.io/beliefstate/"><img src="https://img.shields.io/badge/docs-online-brightgreen" alt="Docs"></a>
 </p>
 
+<p align="center">
+  <img src="assets/banner.png" alt="BeliefState Banner" width="100%">
+</p>
+
 ---
 
 ## The Problem
